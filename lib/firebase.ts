@@ -1,8 +1,17 @@
+import { getMessaging } from "firebase/messaging";
+
+export const getMessagingInstance = () => {
+    if (typeof window === "undefined") return null;
+    try {
+        return getMessaging();
+    } catch {
+        return null;
+    }
+};
 import { initializeApp, getApps, getApp } from "firebase/app";
 import { getAuth } from "firebase/auth";
 import { getFirestore } from "firebase/firestore";
 import { getStorage } from "firebase/storage";
-import { getAnalytics, isSupported } from "firebase/analytics";
 
 const firebaseConfig = {
     apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
@@ -14,47 +23,9 @@ const firebaseConfig = {
     measurementId: process.env.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID,
 };
 
-// Debug logs
-if (typeof window !== 'undefined') {
-    const isMock = !firebaseConfig.apiKey || firebaseConfig.apiKey === "mock_key";
-    console.log("Firebase Config Status:", isMock ? "❌ MOCK VALUES DETECTED" : "✅ Values Loaded");
-    console.log("Firebase Project ID:", firebaseConfig.projectId || "MISSING");
-    if (isMock) {
-        console.warn("CRITICAL: Firebase is running with mock/missing environment variables. Authentication will fail.");
-    }
-}
+const app = typeof window !== "undefined" ? (getApps().length > 0 ? getApp() : initializeApp(firebaseConfig)) : null as any;
+const auth = typeof window !== "undefined" ? getAuth(app) : null as any;
+const db = typeof window !== "undefined" ? getFirestore(app) : null as any;
+const storage = typeof window !== "undefined" ? getStorage(app) : null as any;
 
-
-// Initialize Firebase
-const app = getApps().length > 0 ? getApp() : initializeApp(firebaseConfig);
-const auth = getAuth(app);
-const db = getFirestore(app);
-const storage = getStorage(app);
-
-// Enable Offline Persistence (Web)
-if (typeof window !== 'undefined') {
-    import('firebase/firestore').then(({ enableIndexedDbPersistence }) => {
-        enableIndexedDbPersistence(db).catch((err) => {
-            if (err.code == 'failed-precondition') {
-                // Multiple tabs open, persistence can only be enabled in one tab at a a time.
-            } else if (err.code == 'unimplemented') {
-                // The current browser does not support all of the features required to enable persistence
-            }
-        });
-    });
-}
-
-let analytics = null;
-if (typeof window !== 'undefined') {
-    isSupported().then(yes => yes && (analytics = getAnalytics(app)));
-}
-
-export { app, auth, db, storage, analytics };
-
-export const getMessagingInstance = async () => {
-    if (typeof window !== 'undefined') {
-        const { getMessaging } = await import('firebase/messaging');
-        return getMessaging(app);
-    }
-    return null;
-};
+export { app, auth, db, storage };
