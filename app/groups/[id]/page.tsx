@@ -93,6 +93,13 @@ export default function GroupChatPage() {
             } else {
                 router.push('/groups');
             }
+        }, (err) => {
+            console.error("[Groups] Group details error:", err);
+            setLoading(false);
+            if (err.code === 'permission-denied') {
+                toast.error("You don't have permission to access this group.");
+                router.push('/groups');
+            }
         });
 
         // Subscribe to Messages (Filtered by Channel)
@@ -109,6 +116,8 @@ export default function GroupChatPage() {
 
             setMessages(msgs);
             setTimeout(() => scrollRef.current?.scrollIntoView({ behavior: 'smooth' }), 100);
+        }, (err) => {
+            console.error("[Groups] Messages error:", err);
         });
 
         return () => {

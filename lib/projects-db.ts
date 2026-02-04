@@ -88,269 +88,299 @@ function removeUndefined(obj: any): any {
  * Create a new Project
  */
 export const createProject = async (projectData: Omit<Project, 'id' | 'createdAt' | 'authorName' | 'authorPhoto'>) => {
-    // Enrich with Author Data
-    const authorProfile = await getUserProfile(projectData.createdBy);
-    const authorName = authorProfile?.displayName || 'Founder';
-    const authorPhoto = authorProfile?.photoURL || null;
-
-    const newProject = {
-        ...projectData,
-        authorName,
-        authorPhoto,
-        createdAt: new Date().toISOString()
-    };
-
-    // Deep clean to ensure no undefined values exist (Firestore Rejection Fix)
-    const cleanData = removeUndefined(newProject);
-
-    const docRef = await addDoc(collection(db, 'projects'), cleanData);
-
-    // --- XP: Project Created (+10 XP) ---
     try {
-        await addXp(projectData.createdBy, 10, `project_${docRef.id}`);
-    } catch (e) {
-        console.error("XP Project Creation Award Failed", e);
-    }
+        // Enrich with Author Data
+        const authorProfile = await getUserProfile(projectData.createdBy);
+        const authorName = authorProfile?.displayName || 'Founder';
+        const authorPhoto = authorProfile?.photoURL || null;
 
-    return { id: docRef.id, ...cleanData };
+        const newProject = {
+            ...projectData,
+            authorName,
+            authorPhoto,
+            createdAt: new Date().toISOString()
+        };
+
+        // Deep clean to ensure no undefined values exist (Firestore Rejection Fix)
+        const cleanData = removeUndefined(newProject);
+
+        const docRef = await addDoc(collection(db, 'projects'), cleanData);
+
+        // --- XP: Project Created (+10 XP) ---
+        try {
+            await addXp(projectData.createdBy, 10, `project_${docRef.id}`);
+        } catch (e) {
+            console.error("XP Project Creation Award Failed", e);
+        }
+
+        return { id: docRef.id, ...cleanData };
+    } catch (e) {
+        console.error("[ProjectsDB] createProject error:", e);
+        throw e;
+    }
 };
 
 /**
  * Get Projects with Filters and Simple Recommendation Logic
  */
 export const getProjects = async (currentUserId: string, filters: { filter: 'for-you' | 'all' | 'my-projects'; userProfile?: UserProfile }) => {
-    const projectsRef = collection(db, 'projects');
+    try {
+        const projectsRef = collection(db, 'projects');
 
-    if (filters.filter === 'my-projects') {
-        const q = query(projectsRef, where('createdBy', '==', currentUserId));
+        if (filters.filter === 'my-projects') {
+            const q = query(projectsRef, where('createdBy', '==', currentUserId));
+            const snap = await getDocs(q);
+            const docs = snap.docs.map(d => ({ id: d.id, ...d.data() } as Project));
+            // Sort client-side to avoid Composite Index requirement
+            return docs.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+        }
+
+        // "All" and "For You" basically fetch recent projects for now
+        // Recommendation logic is often best done client-side if data is small (< 500 projects)
+        // or via dedicated specialized Index/Algolia.
+        // We will fetch recent 20-50 and filter/sort client side for "For You".
+
+        const q = query(projectsRef, orderBy('createdAt', 'desc'), limit(50));
         const snap = await getDocs(q);
-        const docs = snap.docs.map(d => ({ id: d.id, ...d.data() } as Project));
-        // Sort client-side to avoid Composite Index requirement
-        return docs.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+        let projects = snap.docs.map(d => ({ id: d.id, ...d.data() } as Project));
+
+        if (filters.filter === 'for-you' && filters.userProfile) {
+            const p = filters.userProfile;
+            // Simple client-side scoring
+            projects = projects.sort((a, b) => {
+                let scoreA = 0;
+                let scoreB = 0;
+
+                // College Boost
+                if (a.locationScope === 'College' && a.college === p.college) scoreA += 10;
+                if (b.locationScope === 'College' && b.college === p.college) scoreB += 10;
+
+                // City Boost
+                if (a.city === p.city) scoreA += 5;
+                if (b.city === p.city) scoreB += 5;
+
+                // Skills Match (Overlap)
+                const skillsA = a.skills?.filter(s => p.interests?.includes(s)).length || 0;
+                const skillsB = b.skills?.filter(s => p.interests?.includes(s)).length || 0;
+                scoreA += skillsA * 3;
+                scoreB += skillsB * 3;
+
+                return scoreB - scoreA;
+            });
+        }
+
+        return projects;
+    } catch (e) {
+        console.error("[ProjectsDB] getProjects error:", e);
+        return [];
     }
-
-    // "All" and "For You" basically fetch recent projects for now
-    // Recommendation logic is often best done client-side if data is small (< 500 projects)
-    // or via dedicated specialized Index/Algolia.
-    // We will fetch recent 20-50 and filter/sort client side for "For You".
-
-    const q = query(projectsRef, orderBy('createdAt', 'desc'), limit(50));
-    const snap = await getDocs(q);
-    let projects = snap.docs.map(d => ({ id: d.id, ...d.data() } as Project));
-
-    if (filters.filter === 'for-you' && filters.userProfile) {
-        const p = filters.userProfile;
-        // Simple client-side scoring
-        projects = projects.sort((a, b) => {
-            let scoreA = 0;
-            let scoreB = 0;
-
-            // College Boost
-            if (a.locationScope === 'College' && a.college === p.college) scoreA += 10;
-            if (b.locationScope === 'College' && b.college === p.college) scoreB += 10;
-
-            // City Boost
-            if (a.city === p.city) scoreA += 5;
-            if (b.city === p.city) scoreB += 5;
-
-            // Skills Match (Overlap)
-            const skillsA = a.skills?.filter(s => p.interests?.includes(s)).length || 0;
-            const skillsB = b.skills?.filter(s => p.interests?.includes(s)).length || 0;
-            scoreA += skillsA * 3;
-            scoreB += skillsB * 3;
-
-            return scoreB - scoreA;
-        });
-    }
-
-    return projects;
 };
 
 /**
  * Apply for a Role
  */
 export const applyForRole = async (applicationData: Omit<Application, 'id' | 'createdAt' | 'status'>) => {
-    // 1. Check if already applied
-    const applicationsRef = collection(db, 'applications');
-    const q = query(
-        applicationsRef,
-        where('projectId', '==', applicationData.projectId),
-        where('roleId', '==', applicationData.roleId),
-        where('applicantUid', '==', applicationData.applicantUid)
-    );
-    const existing = await getDocs(q);
+    try {
+        // 1. Check if already applied
+        const applicationsRef = collection(db, 'applications');
+        const q = query(
+            applicationsRef,
+            where('projectId', '==', applicationData.projectId),
+            where('roleId', '==', applicationData.roleId),
+            where('applicantUid', '==', applicationData.applicantUid)
+        );
+        const existing = await getDocs(q);
 
-    // Allow re-apply if withdrawn or rejected? Let's say NO for now to avoid spam.
-    if (!existing.empty) {
-        // Check status?
-        const status = existing.docs[0].data().status;
-        if (status !== 'withdrawn') {
-            throw new Error(`You have already applied (Status: ${status})`);
+        // Allow re-apply if withdrawn or rejected? Let's say NO for now to avoid spam.
+        if (!existing.empty) {
+            // Check status?
+            const status = existing.docs[0].data().status;
+            if (status !== 'withdrawn') {
+                throw new Error(`You have already applied (Status: ${status})`);
+            }
         }
+
+        // 2. Create Application
+        const newApp: Omit<Application, 'id'> = {
+            ...applicationData,
+            status: 'pending',
+            createdAt: new Date().toISOString()
+        };
+
+        // Sanitize undefined values (e.g. applicantPhoto, portfolioLink)
+        const cleanApp = removeUndefined(newApp);
+
+        const docRef = await addDoc(applicationsRef, cleanApp);
+
+        // 3. Notify Founder - MOVED TO CLOUD FUNCTIONS
+        // await createNotification(applicationData.founderUid, {
+        //     type: 'project_alert',
+        //     title: `New Application: ${applicationData.roleTitle}`,
+        //     body: `${applicationData.applicantName} applied for ${applicationData.projectTitle}`,
+        //     link: `/projects/${applicationData.projectId}/manage`, // Dashboard link
+        //     senderId: applicationData.applicantUid,
+        //     isAnonymous: false,
+        //     metadata: {
+        //         projectId: applicationData.projectId,
+        //         roleId: applicationData.roleId,
+        //         applicationId: docRef.id
+        //     }
+        // });
+
+        return { id: docRef.id, ...newApp };
+    } catch (e) {
+        console.error("[ProjectsDB] applyForRole error:", e);
+        throw e;
     }
-
-    // 2. Create Application
-    const newApp: Omit<Application, 'id'> = {
-        ...applicationData,
-        status: 'pending',
-        createdAt: new Date().toISOString()
-    };
-
-    // Sanitize undefined values (e.g. applicantPhoto, portfolioLink)
-    const cleanApp = removeUndefined(newApp);
-
-    const docRef = await addDoc(applicationsRef, cleanApp);
-
-    // 3. Notify Founder - MOVED TO CLOUD FUNCTIONS
-    // await createNotification(applicationData.founderUid, {
-    //     type: 'project_alert',
-    //     title: `New Application: ${applicationData.roleTitle}`,
-    //     body: `${applicationData.applicantName} applied for ${applicationData.projectTitle}`,
-    //     link: `/projects/${applicationData.projectId}/manage`, // Dashboard link
-    //     senderId: applicationData.applicantUid,
-    //     isAnonymous: false,
-    //     metadata: {
-    //         projectId: applicationData.projectId,
-    //         roleId: applicationData.roleId,
-    //         applicationId: docRef.id
-    //     }
-    // });
-
-    return { id: docRef.id, ...newApp };
 };
 
 /**
  * Get Applications (For Founder Dashboard)
  */
 export const getProjectApplications = async (projectId: string) => {
-    const applicationsRef = collection(db, 'applications');
-    const q = query(applicationsRef, where('projectId', '==', projectId));
-    const snap = await getDocs(q);
-    return snap.docs.map(d => ({ id: d.id, ...d.data() } as Application));
+    try {
+        const applicationsRef = collection(db, 'applications');
+        const q = query(applicationsRef, where('projectId', '==', projectId));
+        const snap = await getDocs(q);
+        return snap.docs.map(d => ({ id: d.id, ...d.data() } as Application));
+    } catch (e) {
+        console.error("[ProjectsDB] getProjectApplications error:", e);
+        return [];
+    }
 };
 
 /**
  * Get User's Applications (For "My Applications" View)
  */
 export const getUserApplications = async (userUid: string) => {
-    const applicationsRef = collection(db, 'applications');
-    const q = query(applicationsRef, where('applicantUid', '==', userUid));
-    const snap = await getDocs(q);
-    const docs = snap.docs.map(d => ({ id: d.id, ...d.data() } as Application));
-    return docs.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+    try {
+        const applicationsRef = collection(db, 'applications');
+        const q = query(applicationsRef, where('applicantUid', '==', userUid));
+        const snap = await getDocs(q);
+        const docs = snap.docs.map(d => ({ id: d.id, ...d.data() } as Application));
+        return docs.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+    } catch (e) {
+        console.error("[ProjectsDB] getUserApplications error:", e);
+        return [];
+    }
 };
 
 /**
  * Update Application Status (Accept/Reject)
  */
 export const updateApplicationStatus = async (applicationId: string, status: 'accepted' | 'rejected', founderUid: string) => {
-    const appRef = doc(db, 'applications', applicationId);
-    const appSnap = await getDoc(appRef);
+    try {
+        const appRef = doc(db, 'applications', applicationId);
+        const appSnap = await getDoc(appRef);
 
-    if (!appSnap.exists()) throw new Error("Application not found");
-    const app = appSnap.data() as Application;
+        if (!appSnap.exists()) throw new Error("Application not found");
+        const app = appSnap.data() as Application;
 
-    // Security Check
-    if (app.founderUid !== founderUid) throw new Error("Unauthorized");
+        // Security Check
+        if (app.founderUid !== founderUid) throw new Error("Unauthorized");
 
-    await updateDoc(appRef, { status });
+        await updateDoc(appRef, { status });
 
-    // Notify Applicant
-    let title = '';
-    let body = '';
+        // Notify Applicant
+        let title = '';
+        let body = '';
 
-    if (status === 'accepted') {
-        title = "Application Accepted! 🎉";
-        body = `You've been accepted as ${app.roleTitle} for ${app.projectTitle}.`;
+        if (status === 'accepted') {
+            title = "Application Accepted! 🎉";
+            body = `You've been accepted as ${app.roleTitle} for ${app.projectTitle}.`;
 
-        // Decrement Open Seats logic can be added here
-        // Ideally we fetch Project, find Role, decrement openSeats...
-        try {
-            const projectRef = doc(db, 'projects', app.projectId);
-            const pSnap = await getDoc(projectRef);
-            if (pSnap.exists()) {
-                const pData = pSnap.data() as Project;
-                const newRoles = pData.roles.map(r => {
-                    if (r.id === app.roleId && r.openSeats > 0) {
-                        return { ...r, openSeats: r.openSeats - 1 };
-                    }
-                    return r;
-                });
-                await updateDoc(projectRef, { roles: newRoles });
-            }
-        } catch (e) {
-            console.error("Failed to decrement seats", e);
-        }
-
-        // --- NEW: Project Membership & Group Chat Logic ---
-        try {
-            // 1. Create Project Member Record
-            // This grants "Project Member" status for future permission checks
-            await addDoc(collection(db, 'project_members'), {
-                projectId: app.projectId,
-                projectTitle: app.projectTitle,
-                userId: app.applicantUid,
-                userName: app.applicantName,
-                roleId: app.roleId,
-                roleTitle: app.roleTitle,
-                joinedAt: new Date().toISOString(),
-                status: 'active'
-            });
-
-            // 2. Manage Project Group Chat
-            // Deterministic ID ensures we don't create duplicates
-            const groupId = `project_${app.projectId}`;
-            const groupRef = doc(db, 'groups', groupId);
-            const groupSnap = await getDoc(groupRef);
-
-            if (!groupSnap.exists()) {
-                // Feature: Auto-create Project Group if it doesn't exist
-                // The Owner/Founder is the creator and first admin
-                await setDoc(groupRef, {
-                    id: groupId,
-                    name: app.projectTitle, // Group Name matches Project
-                    type: 'custom', // Using 'custom' to ensure compatibility, conceptual 'project'
-                    privacy: 'private', // Only members can join/see
-                    description: `Official Team Chat for ${app.projectTitle}`,
-                    admins: [founderUid],
-                    members: [founderUid, app.applicantUid], // Add Founder + New Member
-                    createdAt: new Date().toISOString(),
-                    icon: '🚀', // Project default icon
-                    projectId: app.projectId // Link back to project
-                });
-            } else {
-                // Feature: Add new member to existing Group
-                await updateDoc(groupRef, {
-                    members: arrayUnion(app.applicantUid)
-                });
+            // Decrement Open Seats logic can be added here
+            // Ideally we fetch Project, find Role, decrement openSeats...
+            try {
+                const projectRef = doc(db, 'projects', app.projectId);
+                const pSnap = await getDoc(projectRef);
+                if (pSnap.exists()) {
+                    const pData = pSnap.data() as Project;
+                    const newRoles = pData.roles.map(r => {
+                        if (r.id === app.roleId && r.openSeats > 0) {
+                            return { ...r, openSeats: r.openSeats - 1 };
+                        }
+                        return r;
+                    });
+                    await updateDoc(projectRef, { roles: newRoles });
+                }
+            } catch (e) {
+                console.error("Failed to decrement seats", e);
             }
 
-            console.log("Project Membership & Group Configured for:", app.applicantUid);
+            // --- NEW: Project Membership & Group Chat Logic ---
+            try {
+                // 1. Create Project Member Record
+                // This grants "Project Member" status for future permission checks
+                await addDoc(collection(db, 'project_members'), {
+                    projectId: app.projectId,
+                    projectTitle: app.projectTitle,
+                    userId: app.applicantUid,
+                    userName: app.applicantName,
+                    roleId: app.roleId,
+                    roleTitle: app.roleTitle,
+                    joinedAt: new Date().toISOString(),
+                    status: 'active'
+                });
 
-        } catch (e) {
-            console.error("Failed to configure project membership/group:", e);
-            // We don't throw here to avoid rolling back the acceptance status update
-            // which has already succeeded.
+                // 2. Manage Project Group Chat
+                // Deterministic ID ensures we don't create duplicates
+                const groupId = `project_${app.projectId}`;
+                const groupRef = doc(db, 'groups', groupId);
+                const groupSnap = await getDoc(groupRef);
+
+                if (!groupSnap.exists()) {
+                    // Feature: Auto-create Project Group if it doesn't exist
+                    // The Owner/Founder is the creator and first admin
+                    await setDoc(groupRef, {
+                        id: groupId,
+                        name: app.projectTitle, // Group Name matches Project
+                        type: 'custom', // Using 'custom' to ensure compatibility, conceptual 'project'
+                        privacy: 'private', // Only members can join/see
+                        description: `Official Team Chat for ${app.projectTitle}`,
+                        admins: [founderUid],
+                        members: [founderUid, app.applicantUid], // Add Founder + New Member
+                        createdAt: new Date().toISOString(),
+                        icon: '🚀', // Project default icon
+                        projectId: app.projectId // Link back to project
+                    });
+                } else {
+                    // Feature: Add new member to existing Group
+                    await updateDoc(groupRef, {
+                        members: arrayUnion(app.applicantUid)
+                    });
+                }
+
+                console.log("Project Membership & Group Configured for:", app.applicantUid);
+
+            } catch (e) {
+                console.error("Failed to configure project membership/group:", e);
+                // We don't throw here to avoid rolling back the acceptance status update
+                // which has already succeeded.
+            }
+
+        } else {
+            title = "Application Update";
+            body = `Your application for ${app.roleTitle} at ${app.projectTitle} was not selected.`;
         }
 
-    } else {
-        title = "Application Update";
-        body = `Your application for ${app.roleTitle} at ${app.projectTitle} was not selected.`;
+        // MOVED TO CLOUD FUNCTIONS
+        // await createNotification(app.applicantUid, {
+        //     type: 'project_alert',
+        //     title,
+        //     body,
+        //     link: `/projects/${app.projectId}`,
+        //     senderId: founderUid,
+        //     isAnonymous: false,
+        //     metadata: {
+        //         projectId: app.projectId,
+        //         status
+        //     }
+        // });
+
+        return status;
+    } catch (e) {
+        console.error("[ProjectsDB] updateApplicationStatus error:", e);
+        throw e;
     }
-
-    // MOVED TO CLOUD FUNCTIONS
-    // await createNotification(app.applicantUid, {
-    //     type: 'project_alert',
-    //     title,
-    //     body,
-    //     link: `/projects/${app.projectId}`,
-    //     senderId: founderUid,
-    //     isAnonymous: false,
-    //     metadata: {
-    //         projectId: app.projectId,
-    //         status
-    //     }
-    // });
-
-    return status;
 };

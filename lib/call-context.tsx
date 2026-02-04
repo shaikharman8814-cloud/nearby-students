@@ -291,6 +291,8 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
                     setCallState('incoming');
                     setIsVideoEnabled(newestCallData.isVideo !== false);
                 }
+            }, (err) => {
+                console.error("[CallSystem] Messaging signal error:", err);
             });
             return unsub;
         };
@@ -484,6 +486,8 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
                     setError(data.status === 'rejected' ? "Call Rejected" : "Call Ended");
                     setTimeout(cleanup, 2000);
                 }
+            }, (err) => {
+                console.error("[CallSystem] Call acceptance listener error:", err);
             });
             unsubRef.current = unsub;
 
@@ -518,10 +522,16 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
 
             // Update Signal
             // Update Signal with my ACTUAL peer ID (in case I couldn't get my uid)
-            await updateDoc(doc(db, 'calls', currentCallDocId.current), {
-                status: 'accepted',
-                responderPeerId: peerRef.current?.id || user?.uid // Crucial for handshake if ID changed
-            });
+            try {
+                await updateDoc(doc(db, 'calls', currentCallDocId.current), {
+                    status: 'accepted',
+                    responderPeerId: peerRef.current?.id || user?.uid // Crucial for handshake if ID changed
+                });
+            } catch (firestoreError) {
+                console.error("[CallSystem] Firestore signal update failed:", firestoreError);
+                setError("Failed to accept call signal.");
+                cleanup();
+            }
 
             // Wait for incoming Peer Connection (handled in useEffect)
 
@@ -533,47 +543,61 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
 
     // REJECT CALL
     const rejectCall = async () => {
-        if (currentCallDocId.current) {
-            await updateDoc(doc(db, 'calls', currentCallDocId.current), {
-                status: 'rejected'
-            });
+        try {
+            if (currentCallDocId.current) {
+                await updateDoc(doc(db, 'calls', currentCallDocId.current), {
+                    status: 'rejected'
+                });
+            }
+        } catch (e) {
+            console.error("[CallSystem] Reject call failed:", e);
+        } finally {
+            cleanup();
         }
-        cleanup();
     };
 
     // END CALL
     const endCall = async () => {
-        if (currentCallDocId.current) {
-            // Try-catch just in case doc is gone
-            try {
-                await updateDoc(doc(db, 'calls', currentCallDocId.current), {
-                    status: 'ended'
-                });
-            } catch (e) { }
+        try {
+            if (currentCallDocId.current) {
+                // Try-catch just in case doc is gone
+                try {
+                    await updateDoc(doc(db, 'calls', currentCallDocId.current), {
+                        status: 'ended'
+                    });
+                } catch (e) { }
+            }
+        } catch (e) {
+            console.error("[CallSystem] End call failed:", e);
+        } finally {
+            cleanup();
         }
-        cleanup();
     };
 
     const emergencyEndCall = async () => {
-        console.log("🚨 EMERGENCY END CALL TRIGGERED 🚨");
-        // 1. Instant cleanup locally
-        if (activeCallRef.current) activeCallRef.current.close();
-        if (localStream) localStream.getTracks().forEach(t => t.stop());
-        setCallState('idle'); // Instant UI hide
+        try {
+            console.log("🚨 EMERGENCY END CALL TRIGGERED 🚨");
+            // 1. Instant cleanup locally
+            if (activeCallRef.current) activeCallRef.current.close();
+            if (localStream) localStream.getTracks().forEach(t => t.stop());
+            setCallState('idle'); // Instant UI hide
 
-        // 2. Kill Firestore doc to cut off other side
-        if (currentCallDocId.current) {
-            try {
-                await updateDoc(doc(db, 'calls', currentCallDocId.current), {
-                    status: 'ended_emergency'
-                });
-            } catch (e) { }
+            // 2. Kill Firestore doc to cut off other side
+            if (currentCallDocId.current) {
+                try {
+                    await updateDoc(doc(db, 'calls', currentCallDocId.current), {
+                        status: 'ended_emergency'
+                    });
+                } catch (e) { }
+            }
+
+            // 3. Reset all refs
+            startTimeRef.current = null;
+            currentCallDocId.current = null;
+            activeCallRef.current = null;
+        } catch (e) {
+            console.error("[CallSystem] Emergency end failed:", e);
         }
-
-        // 3. Reset all refs
-        startTimeRef.current = null;
-        currentCallDocId.current = null;
-        activeCallRef.current = null;
     };
 
     // WHISPER ACTION

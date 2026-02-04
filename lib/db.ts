@@ -34,17 +34,27 @@ export interface UserProfile {
 }
 
 export const blockUser = async (currentUserId: string, targetUserId: string) => {
-    const userRef = doc(db, 'users', currentUserId);
-    await updateDoc(userRef, {
-        blockedUsers: arrayUnion(targetUserId)
-    });
+    try {
+        const userRef = doc(db, 'users', currentUserId);
+        await updateDoc(userRef, {
+            blockedUsers: arrayUnion(targetUserId)
+        });
+    } catch (e) {
+        console.error("[DB] blockUser error:", e);
+        throw e;
+    }
 };
 
 export const unblockUser = async (currentUserId: string, targetUserId: string) => {
-    const userRef = doc(db, 'users', currentUserId);
-    await updateDoc(userRef, {
-        blockedUsers: arrayRemove(targetUserId)
-    });
+    try {
+        const userRef = doc(db, 'users', currentUserId);
+        await updateDoc(userRef, {
+            blockedUsers: arrayRemove(targetUserId)
+        });
+    } catch (e) {
+        console.error("[DB] unblockUser error:", e);
+        throw e;
+    }
 };
 
 export interface NotificationPreferences {
@@ -164,70 +174,62 @@ export const addXp = async (uid: string, amount: number, actionId?: string) => {
 };
 
 export const getUsers = async (currentUserId?: string, filters: { college?: string; city?: string; limit?: number } = {}) => {
-    const usersRef = collection(db, 'users');
-    let q = query(usersRef);
-
-    if (filters.college) {
-        q = query(q, where('college', '==', filters.college));
-    }
-    if (filters.city && !filters.college) {
-        q = query(q, where('city', '==', filters.city));
-    }
-
-    // Performance: Limit initial fetch
-    if (filters.limit) {
-        q = query(q, limit(filters.limit));
-    }
-
-    const querySnapshot = await getDocs(q);
-    const users: UserProfile[] = [];
-
-    querySnapshot.forEach((doc) => {
-        const data = doc.data();
-
-        // 1. Normalize data with safe fallbacks
-        const u = {
-            ...data,
-            uid: data.uid || doc.id,
-            displayName: getSafeDisplayName({ ...data, uid: data.uid || doc.id } as any),
-            college: data.college || "",
-            city: data.city || "",
-            course: data.course || "",
-            year: data.year || "",
-            interests: data.interests || [],
-            bio: data.bio || "",
-            isVerified: data.isVerified || false,
-            xp: data.xp ?? 0
-        } as UserProfile;
-
-        // 2. Client side filter for current user
-        if (u.uid === currentUserId) return;
-
-        // 3. Relaxed filtering: Allow users with MISSING values to still show up
-        // (The query already handles matching if filter exists, but client side cleanup 
-        // should be broad enough not to hide "New Students")
-
-        // We only strictly filter IF the user HAS a value that doesn't match.
-        // If they have NO value, we allow them to pass to avoid hiding newcomers.
+    try {
+        const usersRef = collection(db, 'users');
+        let q = query(usersRef);
 
         if (filters.college) {
-            const userColl = (u.college || "").toLowerCase().trim();
-            const targetColl = filters.college.toLowerCase().trim();
-            // Hide ONLY if user has a college that is NOT the target
-            if (userColl && userColl !== targetColl) return;
+            q = query(q, where('college', '==', filters.college));
         }
-
         if (filters.city && !filters.college) {
-            const userCity = (u.city || "").toLowerCase().trim();
-            const targetCity = filters.city.toLowerCase().trim();
-            // Hide ONLY if user has a city that is NOT the target
-            if (userCity && userCity !== targetCity) return;
+            q = query(q, where('city', '==', filters.city));
         }
 
-        users.push(u);
-    });
+        if (filters.limit) {
+            q = query(q, limit(filters.limit));
+        }
 
-    return users;
+        const querySnapshot = await getDocs(q);
+        const users: UserProfile[] = [];
+
+        querySnapshot.forEach((doc) => {
+            const data = doc.data();
+            const u = {
+                ...data,
+                uid: data.uid || doc.id,
+                displayName: getSafeDisplayName({ ...data, uid: data.uid || doc.id } as any),
+                college: data.college || "",
+                city: data.city || "",
+                course: data.course || "",
+                year: data.year || "",
+                interests: data.interests || [],
+                bio: data.bio || "",
+                isVerified: data.isVerified || false,
+                xp: data.xp ?? 0
+            } as UserProfile;
+
+            if (u.uid === currentUserId) return;
+
+            if (filters.college) {
+                const userColl = (u.college || "").toLowerCase().trim();
+                const targetColl = filters.college.toLowerCase().trim();
+                if (userColl && userColl !== targetColl) return;
+            }
+
+            if (filters.city && !filters.college) {
+                const userCity = (u.city || "").toLowerCase().trim();
+                const targetCity = filters.city.toLowerCase().trim();
+                if (userCity && userCity !== targetCity) return;
+            }
+
+            users.push(u);
+        });
+
+        return users;
+    } catch (e) {
+        console.error("[DB] getUsers error:", e);
+        return [];
+    }
 };
 
 // --- Connections ---
@@ -281,20 +283,25 @@ export const getConnectionStatus = async (currentUserId: string, targetUserId: s
 };
 
 export const getUserConnectionsMap = async (currentUserId: string): Promise<Record<string, 'pending' | 'accepted' | 'rejected'>> => {
-    const connectionsRef = collection(db, 'connections');
-    if (!currentUserId) return {};
-    const q = query(connectionsRef, where('users', 'array-contains', currentUserId));
-    const snapshot = await getDocs(q); // Fetch all connections for this user
+    try {
+        const connectionsRef = collection(db, 'connections');
+        if (!currentUserId) return {};
+        const q = query(connectionsRef, where('users', 'array-contains', currentUserId));
+        const snapshot = await getDocs(q); // Fetch all connections for this user
 
-    const map: Record<string, 'pending' | 'accepted' | 'rejected'> = {};
-    snapshot.forEach(doc => {
-        const data = doc.data() as Connection;
-        const otherId = data.users.find(u => u !== currentUserId);
-        if (otherId) {
-            map[otherId] = data.status;
-        }
-    });
-    return map;
+        const map: Record<string, 'pending' | 'accepted' | 'rejected'> = {};
+        snapshot.forEach(doc => {
+            const data = doc.data() as Connection;
+            const otherId = data.users.find(u => u !== currentUserId);
+            if (otherId) {
+                map[otherId] = data.status;
+            }
+        });
+        return map;
+    } catch (e) {
+        console.error("[DB] getUserConnectionsMap error:", e);
+        return {};
+    }
 };
 
 export const sendConnectionRequest = async (currentUserId: string, targetUserId: string) => {
@@ -563,11 +570,15 @@ export const sendMessage = async (connectionId: string, senderId: string, text: 
 }
 
 export const setTypingStatus = async (connectionId: string, userId: string, isTyping: boolean) => {
-    const connRef = doc(db, 'connections', connectionId);
-    // Use dot notation to update nested field without overwriting map
-    await updateDoc(connRef, {
-        [`typing.${userId}`]: isTyping
-    });
+    try {
+        const connRef = doc(db, 'connections', connectionId);
+        // Use dot notation to update nested field without overwriting map
+        await updateDoc(connRef, {
+            [`typing.${userId}`]: isTyping
+        });
+    } catch (e) {
+        // Silently fail typing status updates
+    }
 };
 
 
@@ -648,10 +659,14 @@ export const logCallHistory = async (connectionId: string, callerId: string, dur
 };
 
 export const markConnectionAsRead = async (connectionId: string, userId: string) => {
-    const connRef = doc(db, 'connections', connectionId);
-    await updateDoc(connRef, {
-        [`unread_${userId}`]: false
-    });
+    try {
+        const connRef = doc(db, 'connections', connectionId);
+        await updateDoc(connRef, {
+            [`unread_${userId}`]: false
+        });
+    } catch (e) {
+        // Silently fail as this is a background update
+    }
 };
 
 export const subscribeToMessages = (connectionId: string, callback: (messages: { id: string;[key: string]: any }[]) => void) => {
@@ -661,39 +676,44 @@ export const subscribeToMessages = (connectionId: string, callback: (messages: {
     return onSnapshot(q, (snapshot) => {
         const messages = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
         callback(messages);
+    }, (err) => {
+        console.error("[DB] subscribeToMessages error:", err);
     });
 };
 
 export const getUserConversations = async (userId: string) => {
     if (!userId) return [];
-    const connectionsRef = collection(db, 'connections');
-    const q = query(
-        connectionsRef,
-        where('users', 'array-contains', userId),
-        where('status', '==', 'accepted')
-    );
+    try {
+        const connectionsRef = collection(db, 'connections');
+        const q = query(
+            connectionsRef,
+            where('users', 'array-contains', userId),
+            where('status', '==', 'accepted')
+        );
 
-    const snapshot = await getDocs(q);
-    const conversations: (Connection & { otherUser: UserProfile | null })[] = [];
+        const snapshot = await getDocs(q);
+        const conversations: (Connection & { otherUser: UserProfile | null })[] = [];
 
-    for (const docSnap of snapshot.docs) {
-        const data = docSnap.data();
-        const otherUserId = data.users.find((u: string) => u !== userId);
-        const otherUser = await getUserProfile(otherUserId);
+        for (const docSnap of snapshot.docs) {
+            const data = docSnap.data();
+            const otherUserId = data.users.find((u: string) => u !== userId);
+            const otherUser = await getUserProfile(otherUserId);
 
-        conversations.push({
-            id: docSnap.id,
-            ...(data as Omit<Connection, 'id'>),
-            otherUser
+            conversations.push({
+                id: docSnap.id,
+                ...(data as Omit<Connection, 'id'>),
+                otherUser
+            });
+        }
+
+        // Client-side sort by lastMessageTimestamp (descending)
+        return conversations.sort((a, b) => { // @ts-ignore
+            return new Date(b.lastMessageTimestamp || 0).getTime() - new Date(a.lastMessageTimestamp || 0).getTime();
         });
+    } catch (e) {
+        console.error("[DB] getUserConversations error:", e);
+        return [];
     }
-
-    // Client-side sort by lastMessageTimestamp (descending)
-    return conversations.sort((a, b) => { // @ts-ignore
-        return new Date(b.lastMessageTimestamp || 0).getTime() - new Date(a.lastMessageTimestamp || 0).getTime();
-    });
-
-    return conversations;
 };
 
 // --- Groups ---
@@ -728,24 +748,34 @@ export interface Channel {
 
 export const getUserGroups = async (userId: string): Promise<Group[]> => {
     if (!userId) return [];
-    const groupsRef = collection(db, 'groups');
-    const q = query(groupsRef, where('members', 'array-contains', userId));
-    const snapshot = await getDocs(q);
-    return snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id } as Group));
+    try {
+        const groupsRef = collection(db, 'groups');
+        const q = query(groupsRef, where('members', 'array-contains', userId));
+        const snapshot = await getDocs(q);
+        return snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id } as Group));
+    } catch (e) {
+        console.error("[DB] getUserGroups error:", e);
+        return [];
+    }
 };
 
 export const getDiscoverableGroups = async (userId: string, college?: string): Promise<Group[]> => {
-    const groupsRef = collection(db, 'groups');
-    // Simple query for open groups
-    // In production, you'd want composite indexes for college + privacy
-    let q = query(groupsRef, where('privacy', '==', 'open'), limit(50));
+    try {
+        const groupsRef = collection(db, 'groups');
+        // Simple query for open groups
+        // In production, you'd want composite indexes for college + privacy
+        let q = query(groupsRef, where('privacy', '==', 'open'), limit(50));
 
-    const snapshot = await getDocs(q);
-    const groups = snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id } as Group));
+        const snapshot = await getDocs(q);
+        const groups = snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id } as Group));
 
-    // Filter out groups I'm already in
-    // Filter by college if provided (client side for simplicity mostly)
-    return groups.filter(g => !g.members.includes(userId) && (!college || !g.college || g.college === college));
+        // Filter out groups I'm already in
+        // Filter by college if provided (client side for simplicity mostly)
+        return groups.filter(g => !g.members.includes(userId) && (!college || !g.college || g.college === college));
+    } catch (e) {
+        console.error("[DB] getDiscoverableGroups error:", e);
+        return [];
+    }
 };
 
 export const createCustomGroup = async (name: string, creatorId: string, type: 'custom' | 'channel' = 'custom', privacy: 'open' | 'private' = 'private', description: string = '') => {
@@ -774,16 +804,21 @@ export const requestToJoinGroup = async (groupId: string, userId: string) => {
 };
 
 export const getGroupRequests = async (groupId: string) => {
-    const requestsRef = collection(db, 'groups', groupId, 'requests');
-    const snap = await getDocs(requestsRef);
-    const requests: { id: string, userId: string, user?: UserProfile }[] = [];
+    try {
+        const requestsRef = collection(db, 'groups', groupId, 'requests');
+        const snap = await getDocs(requestsRef);
+        const requests: { id: string, userId: string, user?: UserProfile }[] = [];
 
-    for (const d of snap.docs) {
-        const data = d.data();
-        const user = await getUserProfile(data.userId);
-        if (user) requests.push({ id: d.id, userId: data.userId, user });
+        for (const d of snap.docs) {
+            const data = d.data();
+            const user = await getUserProfile(data.userId);
+            if (user) requests.push({ id: d.id, userId: data.userId, user });
+        }
+        return requests;
+    } catch (e) {
+        console.error("[DB] getGroupRequests error:", e);
+        return [];
     }
-    return requests;
 };
 
 export const approveJoinRequest = async (groupId: string, userId: string) => {
@@ -831,10 +866,14 @@ export const removeGroupMember = async (groupId: string, userId: string) => {
 };
 
 export const getGroupMembers = async (groupId: string): Promise<string[]> => {
-    const groupRef = doc(db, 'groups', groupId);
-    const snap = await getDoc(groupRef);
-    if (snap.exists()) {
-        return snap.data().members || [];
+    try {
+        const groupRef = doc(db, 'groups', groupId);
+        const snap = await getDoc(groupRef);
+        if (snap.exists()) {
+            return snap.data().members || [];
+        }
+    } catch (e) {
+        console.error("[DB] getGroupMembers error:", e);
     }
     return [];
 };
@@ -842,50 +881,54 @@ export const getGroupMembers = async (groupId: string): Promise<string[]> => {
 export const getOrJoinModuleGroup = async (userId: string, college: string, course: string, year: string): Promise<Group | null> => {
     if (!college || !course || !year) return null;
 
-    // Create deterministic Group ID
-    const groupId = `${college}_${course}_${year}`.replace(/\s+/g, '_').toUpperCase();
-    const groupRef = doc(db, 'groups', groupId);
-    const groupSnap = await getDoc(groupRef);
+    try {
+        // Create deterministic Group ID
+        const groupId = `${college}_${course}_${year}`.replace(/\s+/g, '_').toUpperCase();
+        const groupRef = doc(db, 'groups', groupId);
+        const groupSnap = await getDoc(groupRef);
 
-    if (groupSnap.exists()) {
-        const groupData = groupSnap.data() as Group;
-        const updates: any = {};
+        if (groupSnap.exists()) {
+            const groupData = groupSnap.data() as Group;
+            const updates: any = {};
 
-        // Auto-join if not already a member
-        if (!groupData.members.includes(userId)) {
-            updates.members = arrayUnion(userId);
-            // Update local object to reflect change
-            groupData.members.push(userId);
+            // Auto-join if not already a member
+            if (!groupData.members.includes(userId)) {
+                updates.members = arrayUnion(userId);
+                // Update local object to reflect change
+                groupData.members.push(userId);
+            }
+
+            // Auto-Admin: If no admins exist, make this user an admin
+            if (!groupData.admins || groupData.admins.length === 0) {
+                updates.admins = [userId];
+                groupData.admins = [userId];
+            }
+
+            if (Object.keys(updates).length > 0) {
+                await updateDoc(groupRef, updates);
+            }
+
+            return { ...groupData, id: groupId };
+        } else {
+            // Create new group
+            const newGroup: Group = {
+                id: groupId,
+                name: `${course} - ${year} Year`,
+                type: 'module',
+                college,
+                course,
+                year,
+                members: [userId],
+                admins: [userId], // First member is admin
+                createdAt: new Date().toISOString(),
+                icon: '🎓'
+            };
+            await setDoc(groupRef, newGroup);
+            return newGroup;
         }
-
-        // Auto-Admin: If no admins exist, make this user an admin
-        if (!groupData.admins || groupData.admins.length === 0) {
-            updates.admins = [userId];
-            groupData.admins = [userId];
-        }
-
-        if (Object.keys(updates).length > 0) {
-            await updateDoc(groupRef, updates);
-        }
-
-        return { ...groupData, id: groupId };
-    } else {
-        // Create new group
-        const newGroup: Group = {
-            id: groupId,
-            name: `${course} - ${year} Year`,
-            type: 'module',
-            college,
-            course,
-            year,
-            members: [userId],
-            admins: [userId], // First member is admin
-            createdAt: new Date().toISOString(),
-            icon: '🎓'
-        };
-        await setDoc(groupRef, newGroup);
-        return newGroup;
-        return newGroup;
+    } catch (e) {
+        console.error("[DB] getOrJoinModuleGroup error:", e);
+        return null;
     }
 };
 
@@ -904,28 +947,33 @@ export const createChannel = async (groupId: string, name: string, type: 'text' 
 
 export const getUserConnections = async (userId: string): Promise<UserProfile[]> => {
     if (!userId) return [];
-    const connectionsRef = collection(db, 'connections');
-    // Simplified query to avoid composite index requirement
-    const q = query(
-        connectionsRef,
-        where('users', 'array-contains', userId)
-    );
+    try {
+        const connectionsRef = collection(db, 'connections');
+        // Simplified query to avoid composite index requirement
+        const q = query(
+            connectionsRef,
+            where('users', 'array-contains', userId)
+        );
 
-    const snapshot = await getDocs(q);
-    const friends: UserProfile[] = [];
+        const snapshot = await getDocs(q);
+        const friends: UserProfile[] = [];
 
-    for (const docSnap of snapshot.docs) {
-        const data = docSnap.data();
-        // Client-side filtering for status
-        if (data.status !== 'accepted') continue;
+        for (const docSnap of snapshot.docs) {
+            const data = docSnap.data();
+            // Client-side filtering for status
+            if (data.status !== 'accepted') continue;
 
-        const otherUserId = data.users.find((u: string) => u !== userId);
-        if (otherUserId) {
-            const profile = await getUserProfile(otherUserId);
-            if (profile) friends.push(profile);
+            const otherUserId = data.users.find((u: string) => u !== userId);
+            if (otherUserId) {
+                const profile = await getUserProfile(otherUserId);
+                if (profile) friends.push(profile);
+            }
         }
+        return friends;
+    } catch (e) {
+        console.error("[DB] getUserConnections error:", e);
+        return [];
     }
-    return friends;
 };
 
 // --- Group Messaging ---
@@ -943,43 +991,48 @@ export interface GroupMessage {
 }
 
 export const sendGroupMessage = async (groupId: string, senderId: string, text: string, attachment?: { type: 'image' | 'video' | 'file' | 'audio' | 'location', url?: string, name?: string, location?: { lat: number, lng: number } }, channelId: string = 'general', isAnonymous: boolean = false) => {
-    const messagesRef = collection(db, 'groups', groupId, 'messages');
-    const msgData: any = {
-        senderId,
-        text,
-        createdAt: new Date().toISOString(),
-        type: attachment ? attachment.type : 'text',
-        channelId, // Store channel ID
-        isAnonymous
-    };
+    try {
+        const messagesRef = collection(db, 'groups', groupId, 'messages');
+        const msgData: any = {
+            senderId,
+            text,
+            createdAt: new Date().toISOString(),
+            type: attachment ? attachment.type : 'text',
+            channelId, // Store channel ID
+            isAnonymous
+        };
 
-    if (attachment) {
-        if (attachment.url) msgData.fileUrl = attachment.url;
-        if (attachment.name) msgData.fileName = attachment.name;
-        if (attachment.location) msgData.location = attachment.location;
-    }
-
-    await addDoc(messagesRef, msgData);
-
-    const groupRef = doc(db, 'groups', groupId);
-    /*
-     * Construct summary text based on attachment type
-     */
-    let summaryText = text;
-    if (attachment) {
-        switch (attachment.type) {
-            case 'image': summaryText = '📷 Sent a photo'; break;
-            case 'video': summaryText = '🎥 Sent a video'; break;
-            case 'file': summaryText = '📄 Sent a file'; break;
-            case 'location': summaryText = '📍 Shared location'; break;
-            case 'audio': summaryText = '🎤 Sent an audio clip'; break;
+        if (attachment) {
+            if (attachment.url) msgData.fileUrl = attachment.url;
+            if (attachment.name) msgData.fileName = attachment.name;
+            if (attachment.location) msgData.location = attachment.location;
         }
-    }
 
-    await updateDoc(groupRef, {
-        lastMessage: summaryText,
-        lastMessageTimestamp: new Date().toISOString()
-    });
+        await addDoc(messagesRef, msgData);
+
+        const groupRef = doc(db, 'groups', groupId);
+        /*
+         * Construct summary text based on attachment type
+         */
+        let summaryText = text;
+        if (attachment) {
+            switch (attachment.type) {
+                case 'image': summaryText = '📷 Sent a photo'; break;
+                case 'video': summaryText = '🎥 Sent a video'; break;
+                case 'file': summaryText = '📄 Sent a file'; break;
+                case 'location': summaryText = '📍 Shared location'; break;
+                case 'audio': summaryText = '🎤 Sent an audio clip'; break;
+            }
+        }
+
+        await updateDoc(groupRef, {
+            lastMessage: summaryText,
+            lastMessageTimestamp: new Date().toISOString()
+        });
+    } catch (e) {
+        console.error("[DB] sendGroupMessage error:", e);
+        throw e;
+    }
 };
 
 export const subscribeToGroupMessages = (groupId: string, callback: (messages: GroupMessage[]) => void, channelId: string = 'general') => {
@@ -1000,6 +1053,8 @@ export const subscribeToGroupMessages = (groupId: string, callback: (messages: G
             });
 
         callback(messages);
+    }, (err) => {
+        console.error("[DB] subscribeToGroupMessages error:", err);
     });
 };
 
@@ -1019,101 +1074,106 @@ const calculateDistance = (lat1: number, lon1: number, lat2: number, lon2: numbe
 
 // Smart Suggestions Logic
 export const getSmartSuggestions = async (currentUserId: string): Promise<UserProfile[]> => {
-    // 1. Get current user profile to know their city/skills
-    const currentUser = await getUserProfile(currentUserId);
-    if (!currentUser) return [];
+    try {
+        // 1. Get current user profile to know their city/skills
+        const currentUser = await getUserProfile(currentUserId);
+        if (!currentUser) return [];
 
-    // 2. Get all users (optimize in prod to query by city directly)
-    const usersRef = collection(db, 'users');
-    const q = query(usersRef, limit(50));
-    const snapshot = await getDocs(q);
+        // 2. Get all users (optimize in prod to query by city directly)
+        const usersRef = collection(db, 'users');
+        const q = query(usersRef, limit(50));
+        const snapshot = await getDocs(q);
 
-    const suggestions: UserProfile[] = [];
+        const suggestions: UserProfile[] = [];
 
-    // 3. Filter and Rank
-    snapshot.docs.forEach(doc => {
-        if (doc.id === currentUserId) return;
-        const data = doc.data();
-        const user = { ...data, uid: doc.id } as UserProfile;
+        // 3. Filter and Rank
+        snapshot.docs.forEach(doc => {
+            if (doc.id === currentUserId) return;
+            const data = doc.data();
+            const user = { ...data, uid: doc.id } as UserProfile;
 
-        // Calculate Score
-        let score = 0;
+            // Calculate Score
+            let score = 0;
 
-        // Distance Calculation
-        let distance: number | string = 'Unknown';
-        if (currentUser.location && user.location) {
-            distance = calculateDistance(
-                currentUser.location.lat,
-                currentUser.location.lng,
-                user.location.lat,
-                user.location.lng
-            );
+            // Distance Calculation
+            let distance: number | string = 'Unknown';
+            if (currentUser.location && user.location) {
+                distance = calculateDistance(
+                    currentUser.location.lat,
+                    currentUser.location.lng,
+                    user.location.lat,
+                    user.location.lng
+                );
 
-            // Boost score for nearby users
-            if (typeof distance === 'number') {
-                if (distance < 5) score += 20;
-                else if (distance < 20) score += 10;
-                else if (distance < 50) score += 5;
+                // Boost score for nearby users
+                if (typeof distance === 'number') {
+                    if (distance < 5) score += 20;
+                    else if (distance < 20) score += 10;
+                    else if (distance < 50) score += 5;
+                }
             }
-        }
 
-        // Fallback to City Match if no exact location
-        const userCity = user.city?.toLowerCase().trim() || '';
-        const myCity = currentUser.city?.toLowerCase().trim() || '';
-        const sameCity = userCity && myCity && userCity === myCity;
+            // Fallback to City Match if no exact location
+            const userCity = user.city?.toLowerCase().trim() || '';
+            const myCity = currentUser.city?.toLowerCase().trim() || '';
+            const sameCity = userCity && myCity && userCity === myCity;
 
-        if (sameCity) {
-            score += 10;
-        }
+            if (sameCity) {
+                score += 10;
+            }
 
-        // College Match (Very High Weight for Students)
-        const userCollege = user.college?.toLowerCase().trim() || '';
-        const myCollege = currentUser.college?.toLowerCase().trim() || '';
-        const sameCollege = userCollege && myCollege && userCollege === myCollege;
-        if (sameCollege) {
-            score += 15;
-        }
+            // College Match (Very High Weight for Students)
+            const userCollege = user.college?.toLowerCase().trim() || '';
+            const myCollege = currentUser.college?.toLowerCase().trim() || '';
+            const sameCollege = userCollege && myCollege && userCollege === myCollege;
+            if (sameCollege) {
+                score += 15;
+            }
 
-        // Course Match
-        const userCourse = user.course?.toLowerCase().trim() || '';
-        const myCourse = currentUser.course?.toLowerCase().trim() || '';
-        if (userCourse && myCourse && userCourse === myCourse) {
-            score += 5;
-        }
+            // Course Match
+            const userCourse = user.course?.toLowerCase().trim() || '';
+            const myCourse = currentUser.course?.toLowerCase().trim() || '';
+            if (userCourse && myCourse && userCourse === myCourse) {
+                score += 5;
+            }
 
-        // Interest Match (Medium Weight)
-        const userInterests = user.interests || [];
-        const myInterests = currentUser.interests || [];
-        const commonInterests = userInterests.filter(i =>
-            myInterests.some(mi => mi.toLowerCase() === i.toLowerCase())
-        );
-        score += commonInterests.length * 2;
+            // Interest Match (Medium Weight)
+            const userInterests = user.interests || [];
+            const myInterests = currentUser.interests || [];
+            const commonInterests = userInterests.filter(i =>
+                myInterests.some(mi => mi.toLowerCase() === i.toLowerCase())
+            );
+            score += commonInterests.length * 2;
 
-        // @ts-ignore - Improved fallback: if same city/college, estimate 2km, else 50km
-        user.distance = typeof distance === 'number' ? distance : (sameCity || sameCollege ? 2.5 : undefined);
-        // @ts-ignore
-        user.distanceVal = typeof distance === 'number' ? distance : (sameCity || sameCollege ? 2.5 : 999999);
-
-        if (score > 0 || typeof distance === 'number') {
+            // @ts-ignore - Improved fallback: if same city/college, estimate 2km, else 50km
+            user.distance = typeof distance === 'number' ? distance : (sameCity || sameCollege ? 2.5 : undefined);
             // @ts-ignore
-            user.score = score;
-            suggestions.push(user);
-        }
-    });
+            user.distanceVal = typeof distance === 'number' ? distance : (sameCity || sameCollege ? 2.5 : 999999);
 
-    // Sort by Distance ASC, then by Score DESC
-    return suggestions.sort((a, b) => {
-        // @ts-ignore
-        const distA = a.distanceVal;
-        // @ts-ignore
-        const distB = b.distanceVal;
+            if (score > 0 || typeof distance === 'number') {
+                // @ts-ignore
+                user.score = score;
+                suggestions.push(user);
+            }
+        });
 
-        if (distA !== distB) {
-            return distA - distB; // Closer first
-        }
-        // @ts-ignore
-        return (b.score || 0) - (a.score || 0); // High match second
-    });
+        // Sort by Distance ASC, then by Score DESC
+        return suggestions.sort((a, b) => {
+            // @ts-ignore
+            const distA = a.distanceVal;
+            // @ts-ignore
+            const distB = b.distanceVal;
+
+            if (distA !== distB) {
+                return distA - distB; // Closer first
+            }
+            // @ts-ignore
+            return (b.score || 0) - (a.score || 0); // High match second
+        });
+    } catch (e) {
+        console.error("[DB] getSmartSuggestions error:", e);
+        return [];
+    }
 };
 
 // --- Feed / Posts ---
@@ -1284,31 +1344,41 @@ export const unsavePost = async (userId: string, postId: string) => {
 };
 
 export const getSavedPosts = async (userId: string) => {
-    const savedRef = collection(db, 'users', userId, 'saved_posts');
-    const snapshot = await getDocs(savedRef);
-    // We basically need to re-fetch full posts or rely on preview?
-    // User requested "Saved posts appear in a new tab".
-    // Better to fetch fresh data in case it was deleted/edited.
+    try {
+        const savedRef = collection(db, 'users', userId, 'saved_posts');
+        const snapshot = await getDocs(savedRef);
+        // We basically need to re-fetch full posts or rely on preview?
+        // User requested "Saved posts appear in a new tab".
+        // Better to fetch fresh data in case it was deleted/edited.
 
-    const postIds = snapshot.docs.map(d => d.id);
-    if (postIds.length === 0) return [];
+        const postIds = snapshot.docs.map(d => d.id);
+        if (postIds.length === 0) return [];
 
-    // Parallel fetch (max 10 for demo, ideally batched)
-    // Firestore "in" query allows up to 10
-    // We'll just fetch individual docs
-    const posts: Post[] = [];
-    for (const pid of postIds) {
-        const pDoc = await getDoc(doc(db, 'posts', pid));
-        if (pDoc.exists()) {
-            posts.push({ id: pDoc.id, ...pDoc.data() } as Post);
+        // Parallel fetch (max 10 for demo, ideally batched)
+        // Firestore "in" query allows up to 10
+        // We'll just fetch individual docs
+        const posts: Post[] = [];
+        for (const pid of postIds) {
+            const pDoc = await getDoc(doc(db, 'posts', pid));
+            if (pDoc.exists()) {
+                posts.push({ id: pDoc.id, ...pDoc.data() } as Post);
+            }
         }
+        return posts.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+    } catch (e) {
+        console.error("[DB] getSavedPosts error:", e);
+        return [];
     }
-    return posts.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 };
 
 export const checkIsSaved = async (userId: string, postId: string) => {
-    const docSnap = await getDoc(doc(db, 'users', userId, 'saved_posts', postId));
-    return docSnap.exists();
+    try {
+        const docSnap = await getDoc(doc(db, 'users', userId, 'saved_posts', postId));
+        return docSnap.exists();
+    } catch (e) {
+        console.error("[DB] checkIsSaved error:", e);
+        return false;
+    }
 }
 
 export const hidePost = async (userId: string, postId: string) => {
@@ -1329,24 +1399,30 @@ export const reportPost = async (postId: string, reporterId: string, reason: str
 };
 
 export const toggleLikePost = async (postId: string, userId: string) => {
-    const postRef = doc(db, 'posts', postId);
-    const postSnap = await getDoc(postRef);
-    if (!postSnap.exists()) return;
+    try {
+        const postRef = doc(db, 'posts', postId);
+        const postSnap = await getDoc(postRef);
+        if (!postSnap.exists()) return;
 
-    const data = postSnap.data();
-    const likedBy = data.likedBy || [];
-    const isLiked = likedBy.includes(userId);
+        const data = postSnap.data();
+        const likedBy = data.likedBy || [];
+        const isLiked = likedBy.includes(userId);
 
-    if (isLiked) {
-        await updateDoc(postRef, {
-            likes: increment(-1),
-            likedBy: arrayRemove(userId)
-        });
-    } else {
-        await updateDoc(postRef, {
-            likes: increment(1),
-            likedBy: arrayUnion(userId)
-        });
+        if (isLiked) {
+            await updateDoc(postRef, {
+                likes: increment(-1),
+                likedBy: arrayRemove(userId)
+            });
+        } else {
+            await updateDoc(postRef, {
+                likes: increment(1),
+                likedBy: arrayUnion(userId)
+            });
+            // --- XP: Post Liked (+2 XP) ---
+            addXp(data.authorId, 2, `like_${postId}`);
+        }
+    } catch (e) {
+        console.error("[DB] toggleLikePost error:", e);
     }
 };
 
@@ -1367,22 +1443,27 @@ export const addComment = async (postId: string, commentData: { authorId: string
 };
 
 export const getComments = async (postId: string) => {
-    const commentsRef = collection(db, 'posts', postId, 'comments');
-    const q = query(commentsRef, orderBy('createdAt', 'asc'));
-    const snapshot = await getDocs(q);
-    return snapshot.docs.map(doc => {
-        const data = doc.data() as Comment;
-        if (data.isAnonymous) {
-            return {
-                ...data,
-                id: doc.id,
-                authorId: 'anonymous',
-                authorName: 'Anonymous Student',
-                // Masking profile pic logic handled in UI by checking isAnonymous
-            };
-        }
-        return { ...data, id: doc.id };
-    });
+    try {
+        const commentsRef = collection(db, 'posts', postId, 'comments');
+        const q = query(commentsRef, orderBy('createdAt', 'asc'));
+        const snapshot = await getDocs(q);
+        return snapshot.docs.map(doc => {
+            const data = doc.data() as Comment;
+            if (data.isAnonymous) {
+                return {
+                    ...data,
+                    id: doc.id,
+                    authorId: 'anonymous',
+                    authorName: 'Anonymous Student',
+                    // Masking profile pic logic handled in UI by checking isAnonymous
+                };
+            }
+            return { ...data, id: doc.id };
+        });
+    } catch (e) {
+        console.error("[DB] getComments error:", e);
+        return [];
+    }
 };
 
 
@@ -1422,34 +1503,39 @@ export const createResource = async (resourceData: Omit<Resource, 'id' | 'downlo
 };
 
 export const getResources = async (filters: { college?: string; course?: string; year?: string; type?: string }) => {
-    const resourcesRef = collection(db, 'resources');
-    let q = query(resourcesRef);
+    try {
+        const resourcesRef = collection(db, 'resources');
+        let q = query(resourcesRef);
 
-    if (filters.college) {
-        q = query(q, where('college', '==', filters.college));
-    }
+        if (filters.college) {
+            q = query(q, where('college', '==', filters.college));
+        }
 
-    const snapshot = await getDocs(q);
-    let resources = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Resource));
+        const snapshot = await getDocs(q);
+        let resources = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Resource));
 
-    // Client-side filtering for flexibility
-    if (filters.college) {
-        resources = resources.filter(r => !r.college || r.college.toLowerCase().includes(filters.college!.toLowerCase()) || filters.college!.toLowerCase().includes(r.college.toLowerCase()));
-    }
+        // Client-side filtering for flexibility
+        if (filters.college) {
+            resources = resources.filter(r => !r.college || r.college.toLowerCase().includes(filters.college!.toLowerCase()) || filters.college!.toLowerCase().includes(r.college.toLowerCase()));
+        }
 
-    // Client-side filtering for flexibility
-    if (filters.course) {
-        resources = resources.filter(r => r.course.toLowerCase().includes(filters.course!.toLowerCase()));
-    }
-    if (filters.year) {
-        resources = resources.filter(r => r.year === filters.year);
-    }
-    if (filters.type && filters.type !== 'all') {
-        resources = resources.filter(r => r.type === filters.type);
-    }
+        // Client-side filtering for flexibility
+        if (filters.course) {
+            resources = resources.filter(r => r.course.toLowerCase().includes(filters.course!.toLowerCase()));
+        }
+        if (filters.year) {
+            resources = resources.filter(r => r.year === filters.year);
+        }
+        if (filters.type && filters.type !== 'all') {
+            resources = resources.filter(r => r.type === filters.type);
+        }
 
-    // Client-side sort
-    return resources.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+        // Client-side sort
+        return resources.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+    } catch (e) {
+        console.error("[DB] getResources error:", e);
+        return [];
+    }
 };
 
 export const toggleUpvoteResource = async (resourceId: string, userId: string) => {
@@ -1496,10 +1582,15 @@ export const addResourceComment = async (resourceId: string, commentData: { auth
 };
 
 export const getResourceComments = async (resourceId: string) => {
-    const commentsRef = collection(db, 'resources', resourceId, 'comments');
-    const q = query(commentsRef, orderBy('createdAt', 'asc'));
-    const snapshot = await getDocs(q);
-    return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Comment));
+    try {
+        const commentsRef = collection(db, 'resources', resourceId, 'comments');
+        const q = query(commentsRef, orderBy('createdAt', 'asc'));
+        const snapshot = await getDocs(q);
+        return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Comment));
+    } catch (e) {
+        console.error("[DB] getResourceComments error:", e);
+        return [];
+    }
 };
 
 // --- Message Features ---
@@ -1553,23 +1644,33 @@ export const deleteMessage = async (chatId: string, messageId: string, forEveryo
 
 export const getUserPosts = async (userId: string) => {
     if (!userId) return [];
-    const postsRef = collection(db, 'posts');
-    const q = query(postsRef, where('authorId', '==', userId));
-    const snapshot = await getDocs(q);
-    const posts = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-    // Client-side sort
-    return posts.sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+    try {
+        const postsRef = collection(db, 'posts');
+        const q = query(postsRef, where('authorId', '==', userId));
+        const snapshot = await getDocs(q);
+        const posts = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        // Client-side sort
+        return posts.sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+    } catch (e) {
+        console.error("[DB] getUserPosts error:", e);
+        return [];
+    }
 };
 
 export const getUserResources = async (userId: string) => {
     if (!userId) return [];
-    const resRef = collection(db, 'resources');
-    // Note: Field is 'uploaderId' in Resource interface, checking consistency
-    const q = query(resRef, where('uploaderId', '==', userId));
-    const snapshot = await getDocs(q);
-    const resources = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-    // Client-side sort
-    return resources.sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+    try {
+        const resRef = collection(db, 'resources');
+        // Note: Field is 'uploaderId' in Resource interface, checking consistency
+        const q = query(resRef, where('uploaderId', '==', userId));
+        const snapshot = await getDocs(q);
+        const resources = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        // Client-side sort
+        return resources.sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+    } catch (e) {
+        console.error("[DB] getUserResources error:", e);
+        return [];
+    }
 };
 
 // --- Stories & Highlights ---
@@ -1712,10 +1813,15 @@ export const createHighlight = async (userId: string, title: string, coverUrl: s
 };
 
 export const getHighlights = async (userId: string) => {
-    const highlightsRef = collection(db, 'users', userId, 'highlights');
-    const q = query(highlightsRef, orderBy('createdAt', 'desc'));
-    const snapshot = await getDocs(q);
-    return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Highlight));
+    try {
+        const highlightsRef = collection(db, 'users', userId, 'highlights');
+        const q = query(highlightsRef, orderBy('createdAt', 'desc'));
+        const snapshot = await getDocs(q);
+        return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Highlight));
+    } catch (e) {
+        console.error("[DB] getHighlights error:", e);
+        return [];
+    }
 };
 
 export const deleteHighlight = async (userId: string, highlightId: string) => {
@@ -1818,6 +1924,8 @@ export const subscribeToNotifications = (userId: string, callback: (notification
     return onSnapshot(q, (snapshot) => {
         const notifications = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Notification));
         callback(notifications);
+    }, (err) => {
+        console.error("[DB] subscribeToNotifications error:", err);
     });
 };
 
@@ -2014,59 +2122,72 @@ export const createQuestion = async (authorId: string, title: string, content: s
 };
 
 export const getQuestions = async (category?: string) => {
-    const questionsRef = collection(db, 'questions');
-    let q = query(questionsRef, orderBy('createdAt', 'desc'), limit(50));
+    try {
+        const questionsRef = collection(db, 'questions');
+        let q = query(questionsRef, orderBy('createdAt', 'desc'), limit(50));
 
-    // Note: Filtering by category + Sorting by Time requires composite index
-    // For now we will do client side filtering if category is present to avoid index block
-    // Or we rely on the fact that we might just have one 'questions' feed for now.
+        // Note: Filtering by category + Sorting by Time requires composite index
+        // For now we will do client side filtering if category is present to avoid index block
+        // Or we rely on the fact that we might just have one 'questions' feed for now.
 
-    // If we really want category filter on server:
-    // if (category && category !== 'All') {
-    //    q = query(q, where('category', '==', category)); 
-    // }
+        // If we really want category filter on server:
+        // if (category && category !== 'All') {
+        //    q = query(q, where('category', '==', category)); 
+        // }
 
-    const snapshot = await getDocs(q);
-    const questions = snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id } as Question));
+        const snapshot = await getDocs(q);
+        const questions = snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id } as Question));
 
-    if (category && category !== 'All') {
-        return questions.filter(q => q.category === category);
+        if (category && category !== 'All') {
+            return questions.filter(q => q.category === category);
+        }
+        return questions;
+    } catch (e) {
+        console.error("[DB] getQuestions error:", e);
+        return [];
     }
-    return questions;
 };
 
 export const getQuestion = async (questionId: string) => {
-    const docRef = doc(db, 'questions', questionId);
-    const snap = await getDoc(docRef);
-    if (snap.exists()) {
-        return { ...snap.data(), id: snap.id } as Question;
+    try {
+        const docRef = doc(db, 'questions', questionId);
+        const snap = await getDoc(docRef);
+        if (snap.exists()) {
+            return { ...snap.data(), id: snap.id } as Question;
+        }
+    } catch (e) {
+        console.error("[DB] getQuestion error:", e);
     }
     return null;
 };
 
 export const voteQuestion = async (questionId: string, userId: string, type: 'up' | 'down' | 'remove') => {
-    const qRef = doc(db, 'questions', questionId);
+    try {
+        const qRef = doc(db, 'questions', questionId);
 
-    // We only support 'toggle upvote' effectively (Reddit style usually 1 or 0 for MVP)
-    // If type is 'up', and user not in array, add and inc.
-    // If type is 'remove', remove and dec.
+        // We only support 'toggle upvote' effectively (Reddit style usually 1 or 0 for MVP)
+        // If type is 'up', and user not in array, add and inc.
+        // If type is 'remove', remove and dec.
 
-    // Simplification: Toggle Logic
-    const snap = await getDoc(qRef);
-    if (!snap.exists()) return;
-    const data = snap.data() as Question;
-    const hasUpvoted = data.upvotedBy?.includes(userId);
+        // Simplification: Toggle Logic
+        const snap = await getDoc(qRef);
+        if (!snap.exists()) return;
+        const data = snap.data() as Question;
+        const hasUpvoted = data.upvotedBy?.includes(userId);
 
-    if (hasUpvoted) {
-        await updateDoc(qRef, {
-            upvotes: increment(-1),
-            upvotedBy: arrayRemove(userId)
-        });
-    } else {
-        await updateDoc(qRef, {
-            upvotes: increment(1),
-            upvotedBy: arrayUnion(userId)
-        });
+        if (hasUpvoted) {
+            await updateDoc(qRef, {
+                upvotes: increment(-1),
+                upvotedBy: arrayRemove(userId)
+            });
+        } else {
+            await updateDoc(qRef, {
+                upvotes: increment(1),
+                upvotedBy: arrayUnion(userId)
+            });
+        }
+    } catch (e) {
+        console.error("[DB] voteQuestion error:", e);
     }
 };
 
@@ -2124,19 +2245,24 @@ export const addAnswer = async (questionId: string, authorId: string, content: s
 };
 
 export const getAnswers = async (questionId: string) => {
-    const answersRef = collection(db, 'questions', questionId, 'answers');
-    // Sort by upvotes desc, then time? Or just time?
-    // Usually best answers first.
-    // Requires index. Let's do client sort for MVP.
-    const q = query(answersRef);
-    const snapshot = await getDocs(q);
-    return snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id } as Answer))
-        .sort((a, b) => {
-            // AI answers first? Or highest upvotes?
-            if (a.isAiGenerated && !b.isAiGenerated) return -1;
-            if (!a.isAiGenerated && b.isAiGenerated) return 1;
-            return b.upvotes - a.upvotes;
-        });
+    try {
+        const answersRef = collection(db, 'questions', questionId, 'answers');
+        // Sort by upvotes desc, then time? Or just time?
+        // Usually best answers first.
+        // Requires index. Let's do client sort for MVP.
+        const q = query(answersRef);
+        const snapshot = await getDocs(q);
+        return snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id } as Answer))
+            .sort((a, b) => {
+                // AI answers first? Or highest upvotes?
+                if (a.isAiGenerated && !b.isAiGenerated) return -1;
+                if (!a.isAiGenerated && b.isAiGenerated) return 1;
+                return b.upvotes - a.upvotes;
+            });
+    } catch (e) {
+        console.error("[DB] getAnswers error:", e);
+        return [];
+    }
 };
 
 export const voteAnswer = async (questionId: string, answerId: string, userId: string) => {
@@ -2187,18 +2313,22 @@ export const submitFeedback = async (message: string, userId?: string, email?: s
 };
 
 export const awardProfileXP = async (uid: string) => {
-    const userRef = doc(db, 'users', uid);
-    const docSnap = await getDoc(userRef);
+    try {
+        const userRef = doc(db, 'users', uid);
+        const docSnap = await getDoc(userRef);
 
-    if (docSnap.exists()) {
-        const data = docSnap.data() as UserProfile;
-        if (!data.xpAwarded_profile) {
-            await updateDoc(userRef, {
-                xp: increment(50),
-                xpAwarded_profile: true
-            });
-            return true; // Awarded
+        if (docSnap.exists()) {
+            const data = docSnap.data() as UserProfile;
+            if (!data.xpAwarded_profile) {
+                await updateDoc(userRef, {
+                    xp: increment(50),
+                    xpAwarded_profile: true
+                });
+                return true; // Awarded
+            }
         }
+    } catch (e) {
+        console.error("[DB] awardProfileXP error:", e);
     }
-    return false; // Already awarded
+    return false; // Already awarded or error
 };
