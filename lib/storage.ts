@@ -17,6 +17,7 @@ export const uploadAttachment = async (path: string, file: File) => {
     const isVideo = file.name.match(/\.(mp4|mov|webm|ogg)$/i) || file.type.startsWith('video/');
 
     try {
+        if (!storage) throw new Error("Firebase Storage not initialized (Server/SSR)");
         console.log("Attempting Firebase Storage Upload for:", path);
         const storageRef = ref(storage, path);
 
@@ -55,6 +56,7 @@ export const uploadAttachment = async (path: string, file: File) => {
 
             // Get Auth Token for Server-Side Validation
             const { auth } = await import('./firebase');
+            if (!auth) throw new Error("Auth not initialized");
             const token = await auth.currentUser?.getIdToken();
 
             const res = await fetch('/api/upload', {
