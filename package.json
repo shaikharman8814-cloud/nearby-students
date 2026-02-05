@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "node scripts/start-https.js & next dev",
-    "build": "next build || exit 0",
+    "build": "next build",
     "start": "next start",
     "lint": "eslint"
   },
