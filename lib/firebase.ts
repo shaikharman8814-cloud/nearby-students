@@ -1,8 +1,8 @@
-import { initializeApp, getApps, getApp } from "firebase/app";
-import { getAuth } from "firebase/auth";
-import { getFirestore } from "firebase/firestore";
-import { getStorage } from "firebase/storage";
-import { getMessaging } from "firebase/messaging";
+import { initializeApp, getApps, getApp, FirebaseApp } from "firebase/app";
+import { getAuth, Auth } from "firebase/auth";
+import { getFirestore, Firestore } from "firebase/firestore";
+import { getStorage, FirebaseStorage } from "firebase/storage";
+import { getMessaging, Messaging } from "firebase/messaging";
 
 const firebaseConfig = {
     apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY!,
@@ -11,27 +11,29 @@ const firebaseConfig = {
     storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET!,
     messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID!,
     appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID!,
-    measurementId: process.env.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID,
+    measurementId: process.env.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID!,
 };
 
-// ✅ Browser-only Firebase init
-export const app =
-    typeof window !== "undefined"
-        ? getApps().length
+// Singleton initialization for SSR and Vercel safety
+const app =
+    typeof window !== "undefined" && firebaseConfig.apiKey
+        ? getApps().length > 0
             ? getApp()
             : initializeApp(firebaseConfig)
-        : null;
+        : undefined as unknown as FirebaseApp;
 
-export const auth = app ? getAuth(app) : null;
-export const db = app ? getFirestore(app) : null;
-export const storage = app ? getStorage(app) : null;
+export const auth = (app ? getAuth(app) : null) as Auth;
+export const db = (app ? getFirestore(app) : null) as Firestore;
+export const storage = (app ? getStorage(app) : null) as FirebaseStorage;
 
-// ✅ FIXED: Messaging MUST receive app
-export const getMessagingInstance = () => {
-    if (!app || typeof window === "undefined") return null;
+// Synchronous helper for messaging (browser only)
+export const getMessagingInstance = (): Messaging | null => {
+    if (typeof window === "undefined" || !app) return null;
     try {
         return getMessaging(app);
-    } catch {
+    } catch (error) {
         return null;
     }
 };
+
+export { app };

@@ -2,6 +2,22 @@ import { getMessagingInstance } from './firebase';
 import { getToken, onMessage } from 'firebase/messaging';
 import { doc, updateDoc, arrayUnion, getDoc, setDoc } from 'firebase/firestore';
 import { db } from './firebase';
+import { createNotification } from './db';
+
+/**
+ * Triggers a push notification by creating a document in the user's notification subcollection.
+ * The 'sendPushNotification' Cloud Function will handle the actual FCM delivery.
+ */
+export const sendPushNotification = async (userId: string, title: string, body: string, link: string = '/') => {
+    return createNotification(userId, {
+        title,
+        body,
+        link,
+        type: 'system',
+        senderId: 'system',
+        isAnonymous: false
+    });
+};
 
 export const requestNotificationPermission = async (uid: string) => {
     try {
@@ -48,6 +64,7 @@ export const requestNotificationPermission = async (uid: string) => {
 };
 
 export const saveFcmToken = async (uid: string, token: string) => {
+    if (!db) return;
     const userRef = doc(db, 'users', uid);
     await updateDoc(userRef, {
         fcmTokens: arrayUnion(token),
@@ -71,6 +88,7 @@ export const onMessageListener = async () => {
 };
 
 export const toggleNotifications = async (uid: string, enabled: boolean) => {
+    if (!db) return;
     const userRef = doc(db, 'users', uid);
     await updateDoc(userRef, {
         notificationsEnabled: enabled
@@ -78,6 +96,7 @@ export const toggleNotifications = async (uid: string, enabled: boolean) => {
 };
 
 export const getNotificationSettings = async (uid: string) => {
+    if (!db) return { enabled: false };
     const userRef = doc(db, 'users', uid);
     const snap = await getDoc(userRef);
     if (snap.exists()) {
