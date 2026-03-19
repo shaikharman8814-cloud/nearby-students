@@ -13,7 +13,7 @@ export default function LoginPage() {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
     const [successMessage, setSuccessMessage] = useState('');
-    const [isResettingPassword, setIsResettingPassword] = useState(false);
+    const [isReset, setIsReset] = useState(false);
     const [showPassword, setShowPassword] = useState(false);
     const router = useRouter();
 
@@ -64,25 +64,11 @@ export default function LoginPage() {
         setSuccessMessage('');
 
         try {
-            console.log(`[Reset Password] Requesting custom reset email for ${email}`);
-
-            const res = await fetch('/api/auth/custom-reset-password', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ email }),
-            });
-
-            const data = await res.json();
-
-            if (!res.ok) {
-                throw new Error(data.error || 'Failed to send reset email');
-            }
-
+            await sendPasswordResetEmail(auth, email);
             setSuccessMessage('Professional reset email sent! Check your inbox.');
-
         } catch (err: any) {
-            console.warn("Reset Password Error:", err);
-            setError('Something went wrong. Please try again.');
+            console.error(err);
+            setError('Means Firebase not configured correctly for reset');
         } finally {
             setLoading(false);
         }
@@ -117,16 +103,16 @@ export default function LoginPage() {
             <div className="w-full max-w-md space-y-8 bg-card p-8 rounded-2xl border border-border shadow-sm">
                 <div className="text-center">
                     <h2 className="text-3xl font-bold tracking-tight text-foreground">
-                        {isResettingPassword ? 'Reset Password' : 'Welcome Back'}
+                        {isReset ? 'Reset Password' : 'Welcome Back'}
                     </h2>
                     <p className="mt-2 text-sm text-muted-foreground">
-                        {isResettingPassword
+                        {isReset
                             ? 'Enter your email to receive a reset link'
                             : 'Sign in to your account'}
                     </p>
                 </div>
 
-                {isResettingPassword ? (
+                {isReset ? (
                     <form className="mt-8 space-y-6" onSubmit={handleResetPassword}>
                         <div className="space-y-4">
                             <div>
@@ -160,7 +146,7 @@ export default function LoginPage() {
                         <button
                             type="button"
                             onClick={() => {
-                                setIsResettingPassword(false);
+                                setIsReset(false);
                                 setError('');
                                 setSuccessMessage('');
                             }}
@@ -195,10 +181,7 @@ export default function LoginPage() {
                                         </label>
                                         <button
                                             type="button"
-                                            onClick={() => {
-                                                setIsResettingPassword(true);
-                                                setError('');
-                                            }}
+                                            onClick={() => setIsReset(true)}
                                             className="text-sm font-medium text-primary hover:text-primary/90"
                                         >
                                             Forgot password?
