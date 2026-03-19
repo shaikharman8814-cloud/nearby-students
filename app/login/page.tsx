@@ -64,10 +64,23 @@ export default function LoginPage() {
         setSuccessMessage('');
 
         try {
-            await sendPasswordResetEmail(auth, email);
+            console.log(`[Reset Password] Requesting custom reset email for ${email}`);
+
+            const res = await fetch('/api/auth/custom-reset-password', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email }),
+            });
+
+            const data = await res.json();
+
+            if (!res.ok) {
+                throw new Error(data.error || 'Failed to send reset email');
+            }
+
             setSuccessMessage('Professional reset email sent! Check your inbox.');
         } catch (err: any) {
-            console.error(err);
+            console.warn("Reset Password Error:", err);
             setError('Something went wrong. Please try again.');
         } finally {
             setLoading(false);
