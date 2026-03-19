@@ -18,6 +18,9 @@ export function getAdminApp(): App {
     const envServiceAccount = process.env.FIREBASE_SERVICE_ACCOUNT || process.env.FIREBASE_SERVICE_ACCOUNT_KEY;
     if (envServiceAccount) {
         let cleanedEnv = envServiceAccount.trim();
+        // Fix actual newlines inserted into the middle of the string literal by Vercel
+        cleanedEnv = cleanedEnv.replace(/("-----BEGIN PRIVATE KEY-----\n[\s\S]+?\n-----END PRIVATE KEY-----\\n"|"-----BEGIN PRIVATE KEY-----\n[\s\S]+?\n-----END PRIVATE KEY-----\n?")/g, (m) => m.replace(/\n/g, '\\n'));
+
         try {
             serviceAccount = JSON.parse(cleanedEnv);
         } catch (firstErr) {
@@ -25,14 +28,18 @@ export function getAdminApp(): App {
                 // If the user pasted it with surrounding quotes (e.g. from .env.local), strip them
                 if ((cleanedEnv.startsWith("'") && cleanedEnv.endsWith("'")) || (cleanedEnv.startsWith('"') && cleanedEnv.endsWith('"'))) {
                     cleanedEnv = cleanedEnv.slice(1, -1);
-                    // Unescape quotes if they were escaped inside the string literal
                     cleanedEnv = cleanedEnv.replace(/\\"/g, '"');
+
+                    // Re-run the newline fix just in case the outer quotes broke the previous regex 
+                    cleanedEnv = cleanedEnv.replace(/("-----BEGIN PRIVATE KEY-----\n[\s\S]+?\n-----END PRIVATE KEY-----\\n"|"-----BEGIN PRIVATE KEY-----\n[\s\S]+?\n-----END PRIVATE KEY-----\n?")/g, (m) => m.replace(/\n/g, '\\n'));
+
                     serviceAccount = JSON.parse(cleanedEnv);
                 } else {
                     throw firstErr;
                 }
             } catch (e: any) {
-                console.error("[Admin SDK] Failed to parse FIREBASE_SERVICE_ACCOUNT env variable:", e.message);
+                console.error("[Admin SDK] Failed to parse FIREBASE_SERVICE_ACCOUNT env variable. The JSON is severely malformed:", e.message);
+                console.error("String started with:", cleanedEnv.substring(0, 15) + "...");
             }
         }
     }
@@ -71,6 +78,13 @@ export function getAdminApp(): App {
             options.credential = credential;
         } else {
             console.log("[Admin SDK] No service account found, falling back to default credentials.");
+            // On Vercel, falling back to default credentials will ALWAYS throw "Unable to detect a Project Id" or "Could not load default credentials".
+            // Since proxy-login and signup REQUIRE custom tokens, they require an absolute valid Service Account.
+            if (!process.env.FIREBASE_SERVICE_ACCOUNT && !process.env.FIREBASE_SERVICE_ACCOUNT_KEY) {
+                throw new Error("Missing FIREBASE_SERVICE_ACCOUNT Environment Variable in Vercel.");
+            } else {
+                throw new Error("The FIREBASE_SERVICE_ACCOUNT Environment Variable in Vercel is severely malformed. It must be a valid JSON string (no mangled newlines). Please copy the exact JSON from .env.local.");
+            }
         }
 
         return initializeApp(options, 'sone-admin');
