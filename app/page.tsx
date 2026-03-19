@@ -1,7 +1,22 @@
+'use client';
+
 import { Check, MapPin, Rocket, Search, MessageSquare, Bell } from 'lucide-react';
 import Link from 'next/link';
+import { useAuth } from '@/lib/auth-context';
+import { DiscoveryFeed } from '@/components/discovery-feed';
+import { FeedSkeleton } from '@/components/ui/skeletons';
 
 export default function Home() {
+    const { user, loading } = useAuth();
+
+    if (loading) {
+        return <div className="min-h-screen bg-background"><FeedSkeleton /></div>;
+    }
+
+    if (user) {
+        return <DiscoveryFeed />;
+    }
+
     return (
         <main className="relative min-h-[100dvh] bg-[#000000] text-white flex flex-col items-center justify-center px-4 overflow-hidden font-sans">
             {/* Bottom Left Logo */}
