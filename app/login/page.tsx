@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useMemo } from 'react';
-import { signInWithEmailAndPassword, signInWithPopup, GoogleAuthProvider, sendPasswordResetEmail } from 'firebase/auth';
+import { signInWithEmailAndPassword, signInWithPopup, GoogleAuthProvider, } from 'firebase/auth';
 import { auth } from '@/lib/firebase';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
@@ -197,7 +197,7 @@ export default function LoginPage() {
                                             onClick={() => setIsReset(true)}
                                             className="text-sm font-medium text-primary hover:text-primary/90"
                                         >
-                                            Forgot password?
+                                            Forgot Password?
                                         </button>
                                     </div>
                                     <div className="relative mt-1">
