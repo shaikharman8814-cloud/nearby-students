@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useAuth } from '@/lib/auth-context';
-// import { sendPasswordResetEmail } from 'firebase/auth'; // Removed in favor of custom API
+import { sendPasswordResetEmail } from 'firebase/auth';
 import { auth } from '@/lib/firebase';
 import { Loader2, Mail, Lock, ShieldAlert, ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
@@ -21,23 +21,11 @@ export default function AccountSettingsPage() {
 
         setResetting(true);
         try {
-            // Use the same custom API as the login page for consistent, high-quality emails
-            const res = await fetch('/api/auth/custom-reset-password', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ email: user.email }),
-            });
-
-            const data = await res.json();
-
-            if (!res.ok) {
-                throw new Error(data.error || 'Failed to send reset email');
-            }
-
-            toast.success("Professional reset email sent! Check your inbox.");
+            await sendPasswordResetEmail(auth, user.email);
+            toast.success("Reset email sent! Check your inbox.");
         } catch (error: any) {
-            console.warn(error);
-            toast.error(error.message || "Failed to send reset email");
+            console.error(error);
+            toast.error("Means Firebase not configured correctly for reset");
         } finally {
             setResetting(false);
         }
