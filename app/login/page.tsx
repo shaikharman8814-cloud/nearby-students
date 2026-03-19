@@ -68,7 +68,7 @@ export default function LoginPage() {
             setSuccessMessage('Professional reset email sent! Check your inbox.');
         } catch (err: any) {
             console.error(err);
-            setError('Means Firebase not configured correctly for reset');
+            setError('Something went wrong. Please try again.');
         } finally {
             setLoading(false);
         }
