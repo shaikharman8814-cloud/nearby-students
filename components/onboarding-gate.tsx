@@ -3,13 +3,12 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/lib/auth-context';
 import { useRouter, usePathname } from 'next/navigation';
-import { LandingPage } from '@/components/landing-page';
 import { Loader2 } from 'lucide-react';
 import { doc, getDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { getUserProfile } from '@/lib/db';
 
-const PUBLIC_PATHS = ['/login', '/about', '/signup', '/register', '/onboarding'];
+const PUBLIC_PATHS = ['/login', '/about', '/signup', '/register', '/onboarding', '/reset-password'];
 
 export function OnboardingGate({ children }: { children: React.ReactNode }) {
     const { user, loading } = useAuth();
@@ -73,15 +72,18 @@ export function OnboardingGate({ children }: { children: React.ReactNode }) {
         router.push('/login');
     };
 
-    // RENDER LOGIC
     // 1. Public Path? Pass through.
-    if (pathname && PUBLIC_PATHS.some(path => pathname.startsWith(path))) {
+    const isPublicPath = pathname === '/' || PUBLIC_PATHS.some(path => pathname.startsWith(path));
+    if (pathname && isPublicPath) {
         return <>{children}</>;
     }
 
     // 2. Not logged in?
     if (!loading && !user) {
-        return <LandingPage onGetStarted={handleGetStarted} />;
+        if (typeof window !== 'undefined') {
+            router.push('/login');
+        }
+        return null;
     }
 
     // 3. Authenticated? ALWAYS render children immediately (NON-BLOCKING)

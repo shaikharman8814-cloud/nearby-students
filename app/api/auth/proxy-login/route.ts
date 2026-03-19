@@ -68,7 +68,7 @@ export async function POST(reqRequest: Request) {
         });
 
     } catch (error: any) {
-        console.error('Proxy Login Error:', error);
+        console.warn('Proxy Login Error:', error);
         return NextResponse.json({
             error: 'Server error during login',
             details: error.message

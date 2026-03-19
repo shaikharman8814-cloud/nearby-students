@@ -36,7 +36,7 @@ export default function AccountSettingsPage() {
 
             toast.success("Professional reset email sent! Check your inbox.");
         } catch (error: any) {
-            console.error(error);
+            console.warn(error);
             toast.error(error.message || "Failed to send reset email");
         } finally {
             setResetting(false);

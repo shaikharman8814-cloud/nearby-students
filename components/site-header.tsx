@@ -63,10 +63,18 @@ export function SiteHeader({ onMenuClick, isSidebarOpen }: SiteHeaderProps) {
                         <span>Nearby Students</span>
                     </Link>
                 </div>
-                <div className="flex-1 overflow-x-auto scrollbar-hide ml-2 lg:ml-4 hidden lg:block">
-                    <nav className="flex items-center gap-4 lg:gap-6 text-sm font-medium pr-4 min-w-max h-14">
+                <div className="flex-1 overflow-x-auto scrollbar-hide ml-2 md:ml-4 flex items-center justify-end">
+                    <nav className="flex items-center gap-4 md:gap-6 text-sm font-medium h-14">
+                        {/* Mobile Menu Button - ONLY < 768px */}
+                        <button
+                            onClick={onMenuClick}
+                            className="p-2 md:hidden hover:bg-secondary rounded-lg transition-colors mr-auto"
+                            aria-label="Toggle Menu"
+                        >
+                            <Menu className="h-5 w-5" />
+                        </button>
                         {layout === 'header' && (
-                            <div className="hidden lg:flex items-center gap-6">
+                            <div className="hidden md:flex items-center gap-6">
                                 <Link
                                     href="/"
                                     className={`flex items-center gap-2 transition-colors hover:text-foreground ${pathname === '/' ? 'text-foreground' : 'text-muted-foreground'}`}

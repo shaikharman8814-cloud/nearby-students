@@ -25,8 +25,7 @@ export function SecurityHardener() {
                 if (!devtoolsOpen) {
                     devtoolsOpen = true;
                     // Log suspicious activity silently (Objective 8)
-                    // Log suspicious activity silently (Objective 8)
-                    console.debug("[Security] Environment check failed.");
+                    // console.debug("[Security] Environment check failed.");
                 }
             } else {
                 devtoolsOpen = false;

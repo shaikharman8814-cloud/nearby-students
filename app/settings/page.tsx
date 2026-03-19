@@ -31,7 +31,7 @@ export default function SettingsPage() {
             await logout();
             router.push('/login');
         } catch (error) {
-            console.error("Logout failed", error);
+            console.warn("Logout failed", error);
         }
     };
 

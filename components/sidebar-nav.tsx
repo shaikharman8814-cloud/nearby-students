@@ -49,7 +49,7 @@ export function SidebarNav({ isOpen, onClose }: SidebarNavProps) {
                     if (mounted) setIsVisible(true);
                 }
             } catch (error) {
-                console.error("Sidebar visibility check failed", error);
+                console.warn("Sidebar visibility check failed", error);
                 if (mounted) setIsVisible(true);
             }
         };
@@ -79,8 +79,8 @@ export function SidebarNav({ isOpen, onClose }: SidebarNavProps) {
         <aside
             className={`fixed left-0 top-0 z-50 h-[100dvh] border-r border-border bg-background transition-all duration-300 ease-in-out flex flex-col
                 ${collapsed ? 'w-16' : 'w-64'}
-                ${isOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
-                lg:flex
+                ${isOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}
+                md:flex
             `}
         >
             <div className="flex h-14 items-center justify-between px-4 border-b border-border shrink-0">
@@ -91,13 +91,13 @@ export function SidebarNav({ isOpen, onClose }: SidebarNavProps) {
                 )}
                 <button
                     onClick={() => {
-                        if (window.innerWidth < 1024 && onClose) {
+                        if (window.innerWidth < 768 && onClose) {
                             onClose();
                         } else {
                             setCollapsed(!collapsed);
                         }
                     }}
-                    className={`p-2 hover:bg-secondary rounded-lg transition-colors ${collapsed ? 'mx-auto' : ''} lg:block`}
+                    className={`p-2 hover:bg-secondary rounded-lg transition-colors ${collapsed ? 'mx-auto' : ''} md:block`}
                 >
                     {collapsed ? <Menu className="h-5 w-5" /> : <X className="h-5 w-5" />}
                 </button>
@@ -114,7 +114,7 @@ export function SidebarNav({ isOpen, onClose }: SidebarNavProps) {
                         <Link
                             key={item.href}
                             href={item.href}
-                            onClick={() => window.innerWidth < 1024 && onClose?.()}
+                            onClick={() => window.innerWidth < 768 && onClose?.()}
                             className={`flex items-center gap-3 px-3 py-2 rounded-xl transition-all duration-200 group
                                 ${isActive
                                     ? 'bg-primary text-primary-foreground shadow-sm shadow-primary/20'
@@ -137,7 +137,7 @@ export function SidebarNav({ isOpen, onClose }: SidebarNavProps) {
 
             {
                 !collapsed && (
-                    <div className="p-4 border-t border-border mt-auto">
+                    <div className="p-4 border-t border-border mt-auto hidden md:block">
                         <div className="bg-secondary/50 rounded-xl p-3">
                             <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1">Status</p>
                             <div className="flex items-center gap-2">

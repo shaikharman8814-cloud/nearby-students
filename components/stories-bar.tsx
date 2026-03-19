@@ -90,7 +90,7 @@ export function StoriesBar({ currentUserProfile }: StoriesBarProps) {
             setStories(fetched);
             setGroupedStories(groups);
         } catch (e) {
-            console.error(e);
+            console.warn("[StoriesBar]", e);
         } finally {
             setLoading(false);
         }

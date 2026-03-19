@@ -158,7 +158,7 @@ export const UserCard = memo(({ profile, currentUserId, onConnect, unit = 'km', 
 
             // if (onConnect) onConnect(profile.uid); // onConnect was just for UI updates if needed
         } catch (error) {
-            console.error("Connection request failed:", error);
+            console.warn("Connection request failed:", error);
             setStatus('none'); // Revert on failure
         } finally {
             setLoading(false);
@@ -185,7 +185,7 @@ export const UserCard = memo(({ profile, currentUserId, onConnect, unit = 'km', 
             await respondToRequest(connection.id, response);
             setStatus(response);
         } catch (error) {
-            console.error("Failed to respond to request:", error);
+            console.warn("Failed to respond to request:", error);
         } finally {
             setLoading(false);
         }
@@ -262,8 +262,8 @@ export const UserCard = memo(({ profile, currentUserId, onConnect, unit = 'km', 
 
                     <div className="user-identity">
                         <div className="flex items-center gap-2 min-w-0">
-                            <Link href={`/profile/${profile.uid}`} className="hover:underline decoration-primary truncate">
-                                <span className="user-name">{(capitalize(profile.displayName) || 'Student').trim() || 'Student'}</span>
+                            <Link href={`/profile/${profile.uid}`} className="hover:underline decoration-primary">
+                                <span className="user-name font-bold">{(profile.name || profile.displayName || 'Student').trim()}</span>
                             </Link>
                             {profile.isVerified && (
                                 <span className="text-blue-500 bg-blue-500/10 rounded-full p-0.5 shrink-0" title="Verified Student">
@@ -278,11 +278,18 @@ export const UserCard = memo(({ profile, currentUserId, onConnect, unit = 'km', 
                             )}
                         </div>
 
-                        {profile.xp !== undefined && (
-                            <div className="user-badge uppercase tracking-tighter text-[10px] font-medium text-muted-foreground/80">
-                                {getUserLevel(profile.xp)}
-                            </div>
-                        )}
+                        <div className="flex flex-col">
+                            {profile.name && profile.displayName && profile.name !== profile.displayName && (
+                                <span className="text-[10px] text-muted-foreground truncate opacity-80">
+                                    {decodeURIComponent(profile.displayName)}
+                                </span>
+                            )}
+                            {profile.xp !== undefined && (
+                                <div className="user-badge uppercase tracking-tighter text-[9px] font-semibold text-muted-foreground/70">
+                                    {getUserLevel(profile.xp)}
+                                </div>
+                            )}
+                        </div>
                     </div>
                 </div>
 

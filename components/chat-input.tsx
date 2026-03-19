@@ -42,7 +42,7 @@ export default function ChatInput({ onSendMessage, uploadPath, lastMessage, cont
                     setSmartRepliesEnabled(profile.notificationPreferences.smartReplies !== false);
                 }
             } catch (e) {
-                console.error("Failed to fetch smart replies setting", e);
+                console.warn("Failed to fetch smart replies setting", e);
             }
         };
         fetchSmartRepliesSetting();
@@ -77,7 +77,7 @@ export default function ChatInput({ onSendMessage, uploadPath, lastMessage, cont
                 });
 
                 if (!res.ok) {
-                    // console.error("Smart Reply API Error:", res.status, res.statusText);
+                    // console.warn("Smart Reply API Error:", res.status, res.statusText);
                 }
 
                 const data = await res.json();
@@ -87,7 +87,7 @@ export default function ChatInput({ onSendMessage, uploadPath, lastMessage, cont
                     setSuggestions(data.replies);
                 }
             } catch (e) {
-                console.error("Smart Reply failed", e);
+                console.warn("Smart Reply failed", e);
             } finally {
                 setLoadingSuggestions(false);
             }
@@ -170,7 +170,7 @@ export default function ChatInput({ onSendMessage, uploadPath, lastMessage, cont
             const data = await res.json();
             setGifs(data.results || []);
         } catch (e) {
-            console.error("Failed to fetch GIFs", e);
+            console.warn("Failed to fetch GIFs", e);
         } finally {
             setLoadingGifs(false);
         }
@@ -209,7 +209,7 @@ export default function ChatInput({ onSendMessage, uploadPath, lastMessage, cont
                 name: file.name
             }, currentAnonymous);
         } catch (error) {
-            console.error("Upload failed", error);
+            console.warn("Upload failed", error);
             alert("Failed to upload file. Please check your connection and try again.");
         } finally {
             setIsUploading(false);
@@ -240,7 +240,7 @@ export default function ChatInput({ onSendMessage, uploadPath, lastMessage, cont
                         location: { lat: data.latitude, lng: data.longitude }
                     }, currentAnonymous);
                 })
-                .catch(e => { console.error(e); alert("Location sharing failed."); })
+                .catch(e => { console.warn(e); alert("Location sharing failed."); })
                 .finally(() => setLocationLoading(false));
             return;
         }
@@ -254,7 +254,7 @@ export default function ChatInput({ onSendMessage, uploadPath, lastMessage, cont
                         type: 'location',
                         location: { lat: position.coords.latitude, lng: position.coords.longitude }
                     }, currentAnonymous);
-                } catch (e) { console.error(e); } finally { setLocationLoading(false); }
+                } catch (e) { console.warn(e); } finally { setLocationLoading(false); }
             },
             (error) => {
                 const errorMessage = error.message || "Unknown error";
@@ -269,7 +269,7 @@ export default function ChatInput({ onSendMessage, uploadPath, lastMessage, cont
                             location: { lat: data.latitude, lng: data.longitude }
                         }, currentAnonymous);
                     })
-                    .catch(e => { console.error(e); alert("Location sharing failed."); })
+                    .catch(e => { console.warn(e); alert("Location sharing failed."); })
                     .finally(() => setLocationLoading(false));
             }
         );
@@ -294,14 +294,14 @@ export default function ChatInput({ onSendMessage, uploadPath, lastMessage, cont
 
             {/* Emoji Picker */}
             {showEmoji && (
-                <div ref={emojiRef} className="absolute bottom-20 left-4 z-30 shadow-2xl rounded-2xl animate-in duration-200 slide-in-from-bottom-2">
+                <div ref={emojiRef} className="absolute bottom-20 left-4 z-[100] shadow-2xl rounded-2xl animate-in duration-200 slide-in-from-bottom-2">
                     <EmojiPicker onEmojiClick={handleEmojiClick} theme={Theme.AUTO} lazyLoadEmojis={true} />
                 </div>
             )}
 
             {/* GIF Picker */}
             {showGif && (
-                <div ref={gifRef} className="absolute bottom-20 left-0 right-0 mx-auto w-full max-w-sm z-30 bg-popover border border-border rounded-xl shadow-2xl p-4 animate-in duration-200 slide-in-from-bottom-2 h-80 flex flex-col">
+                <div ref={gifRef} className="absolute bottom-20 left-0 right-0 mx-auto w-full max-w-sm z-[100] bg-popover border border-border rounded-xl shadow-2xl p-4 animate-in duration-200 slide-in-from-bottom-2 h-80 flex flex-col">
                     <div className="mb-3">
                         <input
                             type="text"
@@ -336,7 +336,7 @@ export default function ChatInput({ onSendMessage, uploadPath, lastMessage, cont
 
             {/* Attachments Menu (unchanged logic) */}
             {showAttachments && (
-                <div ref={attachmentsRef} className="absolute bottom-20 left-16 z-30 bg-popover border border-border rounded-xl shadow-xl p-2 flex flex-col gap-1 min-w-[160px] animate-in duration-200 fade-in slide-in-from-bottom-2">
+                <div ref={attachmentsRef} className="absolute bottom-20 left-16 z-[100] bg-popover border border-border rounded-xl shadow-xl p-2 flex flex-col gap-1 min-w-[160px] animate-in duration-200 fade-in slide-in-from-bottom-2">
                     <button onClick={() => fileInputRef.current?.click()} className="flex items-center gap-3 p-2 hover:bg-secondary rounded-lg text-sm transition-colors text-left">
                         <div className="p-1.5 bg-blue-100 text-blue-600 rounded-full"><ImageIcon className="w-4 h-4" /></div>
                         Photo
@@ -385,7 +385,7 @@ export default function ChatInput({ onSendMessage, uploadPath, lastMessage, cont
                 {/* GIF Button */}
                 <button
                     onClick={() => setShowGif(!showGif)}
-                    className="hidden sm:flex p-2.5 rounded-full bg-secondary/50 hover:bg-secondary text-muted-foreground hover:text-foreground transition-colors"
+                    className="flex p-2.5 rounded-full bg-secondary/50 hover:bg-secondary text-muted-foreground hover:text-foreground transition-colors"
                     title="GIF"
                 >
                     <Sticker className="w-5 h-5" />

@@ -83,7 +83,7 @@ export async function POST(req: Request) {
         console.log(`[Summarize] Success!`);
         return NextResponse.json({ summary });
     } catch (error: any) {
-        console.error("[Summarize] Error:", error);
+        console.warn("[Summarize] Error:", error);
 
         let errorMessage = error.message || String(error);
         if (errorMessage.includes("429") || errorMessage.includes("Quota")) {

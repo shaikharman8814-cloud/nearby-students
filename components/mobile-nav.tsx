@@ -46,7 +46,7 @@ export function MobileNav() {
                 }
 
             } catch (error) {
-                console.error("Nav visibility check failed", error);
+                console.warn("Nav visibility check failed", error);
                 if (mounted) setIsVisible(true);
             }
         };
@@ -71,7 +71,7 @@ export function MobileNav() {
     }
 
     return (
-        <nav className="fixed bottom-0 left-0 right-0 z-50 bg-background/95 backdrop-blur-md border-t border-border px-4 lg:hidden pb-safe">
+        <nav className="fixed bottom-0 left-0 right-0 z-50 bg-background/95 backdrop-blur-md border-t border-border px-4 md:hidden pb-safe">
             <div className="flex justify-around items-center h-16">
                 {navItems.map((item) => {
                     const Icon = item.icon;

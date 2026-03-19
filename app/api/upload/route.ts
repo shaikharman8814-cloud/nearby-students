@@ -17,7 +17,7 @@ export async function POST(req: NextRequest) {
             const { adminAuth } = await import('@/lib/firebase-admin');
             decodedToken = await adminAuth.verifyIdToken(token);
         } catch (authError) {
-            console.error("[Upload] Auth Verification Failed:", authError);
+            console.warn("[Upload] Auth Verification Failed:", authError);
             return NextResponse.json({ error: 'Unauthorized: Invalid token' }, { status: 401 });
         }
 
@@ -55,10 +55,10 @@ export async function POST(req: NextRequest) {
         }
 
         // Fast Fail for Missing Config
-        if (!process.env.FIREBASE_SERVICE_ACCOUNT_KEY) {
-            console.error("[Upload] Critical: FIREBASE_SERVICE_ACCOUNT_KEY is missing in environment variables.");
+        if (!process.env.FIREBASE_SERVICE_ACCOUNT && !process.env.FIREBASE_SERVICE_ACCOUNT_KEY) {
+            console.warn("[Upload] Critical: FIREBASE_SERVICE_ACCOUNT is missing.");
             return NextResponse.json({
-                error: 'Server Configuration Error: Missing Google Cloud Credentials. Please check server logs and .env.local.'
+                error: 'Server Configuration Error: Storage credentials not configured.'
             }, { status: 500 });
         }
 
@@ -72,8 +72,6 @@ export async function POST(req: NextRequest) {
         const bucketName = process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET || 'nearbystudents.appspot.com';
         const bucket = adminStorage.bucket(bucketName);
 
-        console.log(`[Upload] Using Bucket: ${bucket.name}`);
-
         const fileRef = bucket.file(safePath);
 
         await fileRef.save(buffer, {
@@ -83,37 +81,17 @@ export async function POST(req: NextRequest) {
             public: true,
         });
 
-        try {
-            await fileRef.makePublic();
-        } catch (e) {
-            console.warn("Make public failed, might be already public or permissions issue", e);
-        }
-
-        const publicUrl = `https://storage.googleapis.com/${bucket.name}/${safePath}`;
-
-        const [url] = await fileRef.getSignedUrl({
-            action: 'read',
-            expires: '03-01-2500', // Far future
-        });
-
-        console.log(`[Upload] Success! URL: ${url}`);
+        // Use a slightly smarter public URL generation
+        const url = `https://storage.googleapis.com/${bucket.name}/${encodeURIComponent(safePath)}`;
 
         return NextResponse.json({ url });
 
     } catch (error: any) {
-        console.error("[Upload] ADMIN SDK ERROR:", error);
+        console.error("[Upload] Server Error:", error.message);
 
-        // If Admin SDK fails (e.g. no creds), we should return a clear error 
-        // so the client might fall back to something else.
-        const errorMessage = error.message || 'Unknown server error';
-
-        if (errorMessage.includes('Could not load the default credentials')) {
-            console.error("❌ MISSING CREDENTIALS: Add FIREBASE_SERVICE_ACCOUNT_KEY to .env.local");
-        }
-
+        // Production-ready error: Hide internal details from the client
         return NextResponse.json({
-            error: errorMessage,
-            details: String(error)
+            error: 'Failed to upload file. Please try again later.'
         }, { status: 500 });
     }
 }

@@ -82,11 +82,11 @@ export default function ManageProjectPage() {
                 setBannerPreview(projData.bannerUrl || null);
 
                 // 2. Fetch Applications
-                const apps = await getProjectApplications(id);
+                const apps = await getProjectApplications(id, user.uid);
                 setApplications(apps);
 
             } catch (e) {
-                console.error("Failed to load dashboard", e);
+                console.warn("Failed to load dashboard", e);
                 toast.error("Failed to load dashboard");
             } finally {
                 setLoading(false);
@@ -134,7 +134,7 @@ export default function ManageProjectPage() {
 
             toast.success(`Application ${status}`);
         } catch (e) {
-            console.error("Update failed", e);
+            console.warn("Update failed", e);
             toast.error("Failed to update status");
         } finally {
             setProcessingId(null);
@@ -168,7 +168,7 @@ export default function ManageProjectPage() {
             setIsEditing(false);
             toast.success("Project Updated!");
         } catch (e) {
-            console.error("Save failed", e);
+            console.warn("Save failed", e);
             toast.error("Failed to save changes");
         } finally {
             setSaving(false);

@@ -228,16 +228,11 @@
   /* 🔴 CRITICAL */
   flex: 1 !important;
   /* 🔴 CRITICAL */
-  overflow: visible !important;
+  overflow: hidden !important;
 }
 
 .user-name {
   font-weight: 600 !important;
-  white-space: nowrap !important;
-  overflow: hidden !important;
-  text-overflow: ellipsis !important;
-  max-width: 100% !important;
-  display: block !important;
 }
 
 .user-badge {

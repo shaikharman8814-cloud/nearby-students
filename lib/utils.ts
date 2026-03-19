@@ -7,6 +7,6 @@ export function cn(...inputs: ClassValue[]) {
 
 export function getSafeDisplayName(profile?: { displayName?: string; name?: string; fullName?: string; username?: string } | null): string {
   if (!profile) return 'Student One User';
-  const name = (profile.displayName || profile.name || profile.fullName || profile.username || 'Student').trim();
+  const name = (profile.name || profile.displayName || profile.fullName || profile.username || 'Student').trim();
   return name || 'Student';
 }

@@ -45,7 +45,7 @@ export default function NotificationSettings() {
             await updateNotificationPreferences(user.uid, { [key]: newVal });
             // toast.success("Settings saved"); // Maybe too noisy
         } catch (error) {
-            console.error(error);
+            console.warn(error);
             // Revert on error
             setPrefs(prev => ({ ...prev, [key]: !newVal }));
             toast.error("Failed to save setting");

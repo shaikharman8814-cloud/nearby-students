@@ -64,7 +64,7 @@ export function StoryViewer({ stories, initialIndex, onClose, onRepost }: StoryV
 
         // Mark as viewed
         if (user && !story.viewers.includes(user.uid)) {
-            viewStory(story.id, user.uid).catch(console.error);
+            viewStory(story.id, user.uid).catch(console.warn);
         }
     }, [currentIndex, story, user]);
 
@@ -179,7 +179,7 @@ export function StoryViewer({ stories, initialIndex, onClose, onRepost }: StoryV
                 alert("Reply sent! 📤");
             }
         } catch (e) {
-            console.error("Failed to reply", e);
+            console.warn("Failed to reply", e);
             alert("Failed to send message.");
         } finally {
             setIsSendingReply(false);

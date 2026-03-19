@@ -47,7 +47,7 @@ export default function LoginPage() {
 
             router.push('/');
         } catch (err: any) {
-            console.error("Login Error:", err);
+            console.warn("Login Error:", err);
             setError('Account login failed. Please try again.');
             setLoading(false);
         }
@@ -81,7 +81,7 @@ export default function LoginPage() {
             setSuccessMessage('Professional reset email sent! Check your inbox.');
 
         } catch (err: any) {
-            console.error("Reset Password Error:", err);
+            console.warn("Reset Password Error:", err);
             setError('Something went wrong. Please try again.');
         } finally {
             setLoading(false);
@@ -101,9 +101,13 @@ export default function LoginPage() {
                 console.log("Google Login: Interrupted by user or duplicate request.");
                 setLoading(false);
                 return;
+            } else if (err.code === 'auth/unauthorized-domain') {
+                console.warn("Google Login Error:", err);
+                setError('Domain not authorized. Go to Firebase Console -> Auth -> Settings -> Authorized Domains and add your current IP/Domain.');
+            } else {
+                console.warn("Google Login Error:", err);
+                setError(err.message || 'Failed to sign in with Google');
             }
-            console.error("Google Login Error:", err);
-            setError('Something went wrong. Please try again.');
             setLoading(false);
         }
     };

@@ -90,7 +90,7 @@ export default function ChatPage() {
             }
             setLoading(false);
         }, (err) => {
-            console.error("[ChatPage] Connection listener error:", err);
+            console.warn("[ChatPage] Connection listener error:", err);
             setLoading(false);
             if (err.code === 'permission-denied') {
                 toast.error("You don't have permission to view this chat.");

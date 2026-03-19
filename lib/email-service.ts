@@ -30,13 +30,13 @@ export async function sendEmail({ to, subject, html, from }: SendEmailOptions) {
         });
 
         if (error) {
-            console.error('Resend Production Error:', error);
+            console.warn('Resend Production Error:', error);
             throw new Error(error.message);
         }
 
         return { success: true, id: data?.id };
     } catch (err: any) {
-        console.error('Email Send Error:', err);
+        console.warn('Email Send Error:', err);
         throw err;
     }
 }

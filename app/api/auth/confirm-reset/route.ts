@@ -59,7 +59,7 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ message: 'Password updated successfully' });
 
     } catch (error: any) {
-        console.error('Confirm Reset API Error:', error);
+        console.warn('Confirm Reset API Error:', error);
         return NextResponse.json({
             error: `Server Error: ${error.message}`
         }, { status: 500 });

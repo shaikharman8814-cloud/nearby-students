@@ -36,7 +36,7 @@ async function verifyAuth(req: NextRequest) {
             name: decodedToken.name || decodedToken.displayName
         };
     } catch (error) {
-        console.error("[Feedback API] Token verification failed:", error);
+        console.warn("[Feedback API] Token verification failed:", error);
         return null;
     }
 }
@@ -117,12 +117,12 @@ export async function POST(req: NextRequest) {
                 console.log(`[Feedback API] Notified ${adminTokens.length} admin devices.`);
             }
         } catch (notifErr) {
-            console.error("[Feedback API] Failed to notify admins:", notifErr);
+            console.warn("[Feedback API] Failed to notify admins:", notifErr);
         }
 
         return NextResponse.json({ id: docRef.id, ...feedbackData });
     } catch (error: any) {
-        console.error("[Feedback API] Error in POST:", error);
+        console.warn("[Feedback API] Error in POST:", error);
         if (error.code === 9) {
             return NextResponse.json({
                 error: 'Database index required. Please contact admin.',
@@ -201,7 +201,7 @@ export async function GET(req: NextRequest) {
                     return item;
                 });
             } catch (userFetchErr) {
-                console.error("Failed to enrich feedback with user details", userFetchErr);
+                console.warn("Failed to enrich feedback with user details", userFetchErr);
             }
         }
 
@@ -212,7 +212,7 @@ export async function GET(req: NextRequest) {
 
         return NextResponse.json(feedback);
     } catch (error: any) {
-        console.error("[Feedback API] Error fetching feedback:", error);
+        console.warn("[Feedback API] Error fetching feedback:", error);
         // If it's a failed precondition (missing index), return clear error
         if (error.code === 9) {
             return NextResponse.json({ error: 'Database index required. Please contact admin.' }, { status: 500 });

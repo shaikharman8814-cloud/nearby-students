@@ -88,10 +88,12 @@ export const uploadAttachment = async (path: string, file: File) => {
             }
         }
 
-        // STRATEGY 2: Client-Side Compression (Images Only)
-        // If upload fails, we compress the image to fit into Firestore (< 900KB safe limit).
+        const isImage = file.type.startsWith('image/');
+
+        // STRATEGY 2: Client-Side Compression / Encoding
+        // If upload fails, we encode small files to fit into Firestore (< 900KB safe limit).
         // This effectively bypasses storage requirements for the MVP.
-        if (!isVideo) {
+        if (isImage && !isVideo) {
             try {
                 const { compressImage } = await import('./image-compression');
                 console.log("⚠️ Fallback: Compressing Image for Firestore persistence...");
@@ -111,6 +113,22 @@ export const uploadAttachment = async (path: string, file: File) => {
                 }
             } catch (cmpErr) {
                 console.warn("Compression failed:", cmpErr);
+            }
+        } else if (!isVideo) {
+            // For small documents (PDF, DOC), just convert directly to Base64. Do NOT use canvas compressImage.
+            if (file.size < 700 * 1024) { // 700KB physical file size translates to ~950KB base64
+                try {
+                    console.log("⚠️ Fallback: Encoding small document to Base64...");
+                    const base64 = await new Promise<string>((resolve, reject) => {
+                        const reader = new FileReader();
+                        reader.onload = (e) => resolve(e.target?.result as string);
+                        reader.onerror = (e) => reject(e);
+                        reader.readAsDataURL(file);
+                    });
+                    if (base64.length < 950 * 1024) return base64;
+                } catch (encErr) {
+                    console.warn("Encoding failed:", encErr);
+                }
             }
         }
 

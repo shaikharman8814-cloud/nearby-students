@@ -44,7 +44,7 @@ export default function FeedPage() {
                     setUserProfile(profile);
                     if (!profile) setLoading(false);
                 } catch (e) {
-                    console.error("Failed to load profile", e);
+                    console.warn("Failed to load profile", e);
                     setLoading(false);
                 } finally {
                     clearTimeout(timeout);
@@ -86,7 +86,7 @@ export default function FeedPage() {
 
             setPosts(fetchedPosts);
         } catch (error) {
-            console.error("Failed to load posts", error);
+            console.warn("Failed to load posts", error);
         } finally {
             clearTimeout(timeout);
             setLoading(false);

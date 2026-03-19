@@ -116,7 +116,7 @@ export const PostItem = memo(({ post, currentUserId }: PostItemProps) => {
             const data = await res.json();
             setGifs(data.results || []);
         } catch (e) {
-            console.error("Failed to fetch GIFs", e);
+            console.warn("Failed to fetch GIFs", e);
         } finally {
             setLoadingGifs(false);
         }
@@ -136,7 +136,7 @@ export const PostItem = memo(({ post, currentUserId }: PostItemProps) => {
             // Revert on error
             setLiked(!isNowLiked);
             setLikeCount(prev => isNowLiked ? prev - 1 : prev + 1);
-            console.error("Like failed", error);
+            console.warn("Like failed", error);
         }
     };
 
@@ -152,7 +152,7 @@ export const PostItem = memo(({ post, currentUserId }: PostItemProps) => {
                 await unsavePost(currentUserId, post.id);
             }
         } catch (e) {
-            console.error("Save failed", e);
+            console.warn("Save failed", e);
             setSaved(!isNowSaved);
         }
     }
@@ -230,7 +230,7 @@ export const PostItem = memo(({ post, currentUserId }: PostItemProps) => {
 
             await addComment(post.id, commentData);
         } catch (error) {
-            console.error("Comment failed", error);
+            console.warn("Comment failed", error);
             alert("Failed to post comment. Please try again.");
         } finally {
             setIsUploading(false);
@@ -267,7 +267,7 @@ export const PostItem = memo(({ post, currentUserId }: PostItemProps) => {
 
             await addComment(post.id, commentData);
         } catch (error) {
-            console.error("GIF Comment failed", error);
+            console.warn("GIF Comment failed", error);
         } finally {
             setIsUploading(false);
         }

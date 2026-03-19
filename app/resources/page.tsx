@@ -69,7 +69,7 @@ export default function ResourcesPage() {
                         setLoading(false);
                     }
                 } catch (e) {
-                    console.error("Error loading profile", e);
+                    console.warn("Error loading profile", e);
                     setLoading(false);
                 }
             } else {
@@ -117,7 +117,7 @@ export default function ResourcesPage() {
             } catch (e) { }
 
         } catch (error) {
-            console.error("Failed to load resources", error);
+            console.warn("Failed to load resources", error);
         } finally {
             setLoading(false);
         }
@@ -180,7 +180,7 @@ export default function ResourcesPage() {
             loadResources();
 
         } catch (error) {
-            console.error("❌ Upload Workflow Failed:", error);
+            console.warn("❌ Upload Workflow Failed:", error);
             alert("Failed to upload resource. Please try again.");
         } finally {
             console.log("🏁 Upload Workflow Finished. Stopping Loading.");
@@ -229,7 +229,7 @@ export default function ResourcesPage() {
                                         : 'bg-secondary text-muted-foreground hover:bg-secondary/80'
                                         }`}
                                 >
-                                    {type === 'all' ? 'All Types' : type + 's'}
+                                    {type === 'all' ? 'All Types' : type === 'syllabus' ? 'Syllabus' : type + 's'}
                                 </button>
                             ))}
                         </div>

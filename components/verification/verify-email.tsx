@@ -41,7 +41,7 @@ export function VerifyEmail() {
                 toast.error("Too many requests. Please wait before retrying.");
                 setCooldown(60); // Enforce cooldown on error too
             } else {
-                console.error(error); // Only log unknown errors
+                console.warn(error); // Only log unknown errors
                 toast.error("Failed to send email. Try again later.");
             }
         } finally {
@@ -68,7 +68,7 @@ export function VerifyEmail() {
                 toast.info("Not verified yet. Please check your email link.");
             }
         } catch (error: any) {
-            console.error("Refresh failed", error);
+            console.warn("Refresh failed", error);
             toast.error("Failed to refresh status.");
         } finally {
             setRefreshing(false);

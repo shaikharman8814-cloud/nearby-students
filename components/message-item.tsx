@@ -73,12 +73,18 @@ const MessageItem = memo(({ message, isMe, showHeader }: MessageItemProps) => {
                     // Fallback: Render as a clean File Attachment (looks intentional, not an error)
                     return (
                         <div className="space-y-1">
-                            <a
-                                href={message.fileUrl}
-                                download
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className={`flex items-center gap-3 p-3 rounded-lg border ${isMe ? 'bg-primary-foreground/10 border-primary-foreground/20' : 'bg-background/50 border-border'} transition-colors hover:bg-black/5`}
+                            <div
+                                onClick={(e) => {
+                                    e.preventDefault();
+                                    if (!message.fileUrl) return;
+                                    const a = document.createElement('a');
+                                    a.href = message.fileUrl;
+                                    a.download = message.fileName || 'video_clip';
+                                    document.body.appendChild(a);
+                                    a.click();
+                                    document.body.removeChild(a);
+                                }}
+                                className={`cursor-pointer flex items-center gap-3 p-3 rounded-lg border ${isMe ? 'bg-primary-foreground/10 border-primary-foreground/20' : 'bg-background/50 border-border'} transition-colors hover:bg-black/5`}
                             >
                                 <div className={`p-2 rounded-full ${isMe ? 'bg-white/20' : 'bg-primary/10 text-primary'}`}>
                                     <FileText className="w-5 h-5" />
@@ -88,7 +94,7 @@ const MessageItem = memo(({ message, isMe, showHeader }: MessageItemProps) => {
                                     <p className="text-xs opacity-70 text-red-400">Video Load Failed</p>
                                 </div>
                                 <Download className="w-4 h-4 opacity-70" />
-                            </a>
+                            </div>
                             {message.text && <p className="text-sm pt-1">{message.text}</p>}
                         </div>
                     );
@@ -124,11 +130,18 @@ const MessageItem = memo(({ message, isMe, showHeader }: MessageItemProps) => {
             case 'file':
                 return (
                     <div className="space-y-1">
-                        <a
-                            href={message.fileUrl}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className={`flex items-center gap-3 p-3 rounded-lg border ${isMe ? 'bg-primary-foreground/10 border-primary-foreground/20' : 'bg-background/50 border-border'} transition-colors hover:bg-black/5`}
+                        <div
+                            onClick={(e) => {
+                                e.preventDefault();
+                                if (!message.fileUrl) return;
+                                const a = document.createElement('a');
+                                a.href = message.fileUrl;
+                                a.download = message.fileName || 'document';
+                                document.body.appendChild(a);
+                                a.click();
+                                document.body.removeChild(a);
+                            }}
+                            className={`cursor-pointer flex items-center gap-3 p-3 rounded-lg border ${isMe ? 'bg-primary-foreground/10 border-primary-foreground/20' : 'bg-background/50 border-border'} transition-colors hover:bg-black/5`}
                         >
                             <div className={`p-2 rounded-full ${isMe ? 'bg-white/20' : 'bg-primary/10 text-primary'}`}>
                                 <FileText className="w-5 h-5" />
@@ -138,7 +151,7 @@ const MessageItem = memo(({ message, isMe, showHeader }: MessageItemProps) => {
                                 <p className="text-xs opacity-70">Document</p>
                             </div>
                             <Download className="w-4 h-4 opacity-70" />
-                        </a>
+                        </div>
                         {message.text && <p className="text-sm pt-1">{message.text}</p>}
                     </div>
                 );
@@ -146,11 +159,12 @@ const MessageItem = memo(({ message, isMe, showHeader }: MessageItemProps) => {
                 const mapUrl = `https://www.google.com/maps?q=${message.location?.lat},${message.location?.lng}`;
                 return (
                     <div className="space-y-1">
-                        <a
-                            href={mapUrl}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="block rounded-lg overflow-hidden border border-border/50 relative group"
+                        <div
+                            onClick={(e) => {
+                                e.preventDefault();
+                                window.open(mapUrl, '_blank', 'noopener,noreferrer');
+                            }}
+                            className="cursor-pointer block rounded-lg overflow-hidden border border-border/50 relative group"
                         >
                             {/* Simple static map preview placeholder or custom styling */}
                             <div className="h-32 bg-secondary flex items-center justify-center relative bg-[url('https://maps.googleapis.com/maps/api/staticmap?center=0,0&zoom=1&size=400x400')] bg-cover bg-center bg-no-repeat bg-gray-100">
@@ -163,7 +177,7 @@ const MessageItem = memo(({ message, isMe, showHeader }: MessageItemProps) => {
                                 <span>📍 Location Shared</span>
                                 <span className="underline opacity-70">Open Maps</span>
                             </div>
-                        </a>
+                        </div>
                         {message.text && <p className="text-sm pt-1">{message.text}</p>}
                     </div>
                 );

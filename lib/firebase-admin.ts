@@ -8,57 +8,61 @@ import { getMessaging } from "firebase-admin/messaging";
 import { SERVICE_ACCOUNT_KEY } from "./service-account";
 
 export function getAdminApp(): App {
-
-    // Use the hardcoded key to avoid env parsing issues
-    const serviceAccount = SERVICE_ACCOUNT_KEY as any;
-
     // Check for existing named app to avoid HMR duplicates
     const existingApp = getApps().find(app => app.name === 'sone-admin');
-    if (existingApp) {
-        return existingApp;
+    if (existingApp) return existingApp;
+
+    let serviceAccount: any = null;
+
+    // Priority 1: Environment Variable (Recommended for Production)
+    const envServiceAccount = process.env.FIREBASE_SERVICE_ACCOUNT || process.env.FIREBASE_SERVICE_ACCOUNT_KEY;
+    if (envServiceAccount) {
+        try {
+            serviceAccount = JSON.parse(envServiceAccount);
+        } catch (e) {
+            console.error("[Admin SDK] Failed to parse FIREBASE_SERVICE_ACCOUNT or FIREBASE_SERVICE_ACCOUNT_KEY env variable.", e);
+        }
     }
 
-    console.log("[Admin SDK] Initializing new app instance: sone-admin");
+    // Priority 2: Local File (Fallback for dev, now null by default)
+    if (!serviceAccount && SERVICE_ACCOUNT_KEY) {
+        serviceAccount = SERVICE_ACCOUNT_KEY;
+    }
+
+    console.log("[Admin SDK] Initializing instance: sone-admin");
 
     let credential;
-
     if (serviceAccount) {
         try {
-            // FIX: Handle literal newlines in private key (common in Vercel/Env)
+            // Handle literal newlines in private key (critical for env vars)
             const privateKey = serviceAccount.private_key?.replace(/\\n/g, '\n');
 
-            // Remap snake_case to camelCase for cert()
-            const accountForCert = {
+            credential = cert({
                 projectId: serviceAccount.project_id,
                 clientEmail: serviceAccount.client_email,
                 privateKey: privateKey,
-            };
+            });
 
-            // Debug logs
-            console.log("[Admin SDK] ProjectId:", accountForCert.projectId);
-            console.log("[Admin SDK] ClientEmail:", accountForCert.clientEmail);
-
-            credential = cert(accountForCert);
+            console.log("[Admin SDK] Credential initialized for project:", serviceAccount.project_id);
         } catch (e) {
-            console.error("❌ Failed to parse Service Account:", e);
+            console.warn("❌ Failed to initialize credential from Service Account.", e);
         }
     }
 
     try {
         const options: any = {
-            // projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID 
+            projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID
         };
+
         if (credential) {
             options.credential = credential;
         } else {
-            options.projectId = process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID;
+            console.log("[Admin SDK] No service account found, falling back to default credentials.");
         }
 
-        // Initialize with unique name to bypass default app issues
         return initializeApp(options, 'sone-admin');
-
     } catch (e: any) {
-        console.error("❌ Firebase Admin Init Failed:", e);
+        console.error("❌ Firebase Admin Init Failed:", e.message);
         throw e;
     }
 }

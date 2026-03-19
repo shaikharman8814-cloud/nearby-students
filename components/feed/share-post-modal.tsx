@@ -29,7 +29,7 @@ export function SharePostModal({ post, isOpen, onClose }: SharePostModalProps) {
                 const friends = await getUserConnections(user.uid);
                 setConnections(friends);
             } catch (error) {
-                console.error("Failed to load connections for sharing", error);
+                console.warn("Failed to load connections for sharing", error);
             } finally {
                 setLoading(false);
             }
@@ -62,7 +62,7 @@ export function SharePostModal({ post, isOpen, onClose }: SharePostModalProps) {
             setSentIds(prev => [...prev, recipient.uid]);
 
         } catch (error) {
-            console.error("Failed to share post", error);
+            console.warn("Failed to share post", error);
         } finally {
             setSending(null);
         }

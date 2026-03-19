@@ -11,16 +11,16 @@ export function PresenceManager() {
         if (!user) return;
 
         // Update immediately on mount
-        updateLastActive(user.uid).catch(console.error);
+        updateLastActive(user.uid).catch(console.warn);
 
         // Update every 5 minutes
         const interval = setInterval(() => {
-            updateLastActive(user.uid).catch(console.error);
+            updateLastActive(user.uid).catch(console.warn);
         }, 5 * 60 * 1000);
 
         // Update on window focus
         const handleFocus = () => {
-            updateLastActive(user.uid).catch(console.error);
+            updateLastActive(user.uid).catch(console.warn);
         };
 
         window.addEventListener('focus', handleFocus);

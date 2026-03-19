@@ -42,7 +42,7 @@ export default function QuestionPage() {
             setQuestion(q);
             setAnswers(a);
         } catch (error) {
-            console.error(error);
+            console.warn(error);
         } finally {
             setLoading(false);
         }
@@ -59,7 +59,7 @@ export default function QuestionPage() {
             const updatedAnswers = await getAnswers(questionId);
             setAnswers(updatedAnswers);
         } catch (e) {
-            console.error(e);
+            console.warn(e);
             alert("Failed to submit");
         } finally {
             setSubmitting(false);
@@ -85,7 +85,7 @@ export default function QuestionPage() {
             setQuestion(q);
             setAnswers(a);
         } catch (e) {
-            console.error("AI Error", e);
+            console.warn("AI Error", e);
             alert("AI Study Buddy is currently overloaded. Please try again later.");
         } finally {
             setRequestingAi(false);

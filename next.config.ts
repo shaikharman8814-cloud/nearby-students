@@ -18,8 +18,7 @@ const nextConfig: NextConfig = {
               "img-src 'self' blob: data: https://firebasestorage.googleapis.com https://lh3.googleusercontent.com https://storage.googleapis.com https://api.dicebear.com",
               "font-src 'self' https://fonts.gstatic.com",
               "connect-src 'self' https://firestore.googleapis.com https://firebase.googleapis.com https://firebaseinstallations.googleapis.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://firebasestorage.googleapis.com https://www.google-analytics.com https://*.google.com https://apis.google.com https://stats.g.doubleclick.net https://vitals.vercel-insights.com https://accounts.google.com wss://0.peerjs.com https://0.peerjs.com",
-              "frame-src 'self' https://sone-app.firebaseapp.com https://sone-app.web.app https://accounts.google.com https://*.firebaseapp.com",
-              "upgrade-insecure-requests",
+              "frame-src 'self' https://sone-app.firebaseapp.com https://sone-app.web.app https://accounts.google.com https://*.firebaseapp.com"
             ].join('; '),
           },
           {
@@ -36,12 +35,8 @@ const nextConfig: NextConfig = {
           },
           {
             key: 'Permissions-Policy',
-            value: 'camera=(), microphone=(), geolocation=(self), browsing-topics=()',
-          },
-          {
-            key: 'Strict-Transport-Security',
-            value: 'max-age=31536000; includeSubDomains; preload',
-          },
+            value: 'camera=(self), microphone=(self), geolocation=(self), browsing-topics=()',
+          }
         ],
       },
     ];

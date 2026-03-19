@@ -44,10 +44,10 @@ export default function SignupPage() {
 
             router.push('/onboarding');
         } catch (err: any) {
-            console.error("--- PROXY SIGNUP ERROR ---");
-            console.error("Code:", err.code);
-            console.error("Message:", err.message);
-            console.error("----------------------------");
+            console.warn("--- PROXY SIGNUP ERROR ---");
+            console.warn("Code:", err.code);
+            console.warn("Message:", err.message);
+            console.warn("----------------------------");
 
             setError('Something went wrong. Please try again.');
         } finally {

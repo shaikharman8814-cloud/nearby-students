@@ -88,7 +88,7 @@ export class NetworkManager {
                 if (err?.type === 'network' || err?.message?.includes('Lost connection')) {
                     return;
                 }
-                console.error('PeerJS Error:', err);
+                console.warn('PeerJS Error:', err);
                 reject(err);
             });
         });
@@ -141,7 +141,7 @@ export class NetworkManager {
         });
 
         conn.on('error', (err) => {
-            console.error('Connection error:', err);
+            console.warn('Connection error:', err);
         });
     }
 

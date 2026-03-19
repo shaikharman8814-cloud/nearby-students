@@ -145,7 +145,7 @@ export class AudioAnalyzer {
             const bufferLength = this.analyser.frequencyBinCount;
             this.dataArray = new Uint8Array(bufferLength);
         } catch (e) {
-            console.error("AudioAnalyzer connect error:", e);
+            console.warn("AudioAnalyzer connect error:", e);
         }
     }
 

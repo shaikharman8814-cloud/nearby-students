@@ -50,7 +50,7 @@ export default function KartArenaPage() {
 
                 setNetwork(net);
             } catch (e) {
-                console.error("Network Init Failed", e);
+                console.warn("Network Init Failed", e);
                 setStatus("Connection Error");
                 initializingRef.current = false;
             }

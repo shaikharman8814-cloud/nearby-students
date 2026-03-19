@@ -89,7 +89,7 @@ export default function SupportPage() {
 
         }, (error) => {
             clearTimeout(timeout);
-            console.error("Real-time feedback error:", error);
+            console.warn("Real-time feedback error:", error);
             setLoading(false);
         });
 
@@ -129,7 +129,7 @@ export default function SupportPage() {
                 setError(errorMessage);
             }
         } catch (err: any) {
-            console.error("Submit error:", err);
+            console.warn("Submit error:", err);
             setError('Something went wrong: ' + (err.message || 'Unknown error'));
         } finally {
             setSubmitting(false);
@@ -156,7 +156,7 @@ export default function SupportPage() {
                 // fetchFeedback(); // Handled by snapshot
             }
         } catch (err) {
-            console.error("Reply failed", err);
+            console.warn("Reply failed", err);
         } finally {
             setReplying(false);
         }

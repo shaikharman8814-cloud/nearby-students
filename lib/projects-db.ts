@@ -110,12 +110,12 @@ export const createProject = async (projectData: Omit<Project, 'id' | 'createdAt
         try {
             await addXp(projectData.createdBy, 10, `project_${docRef.id}`);
         } catch (e) {
-            console.error("XP Project Creation Award Failed", e);
+            console.warn("XP Project Creation Award Failed", e);
         }
 
         return { id: docRef.id, ...cleanData };
     } catch (e) {
-        console.error("[ProjectsDB] createProject error:", e);
+        console.warn("[ProjectsDB] createProject error:", e);
         throw e;
     }
 };
@@ -171,7 +171,7 @@ export const getProjects = async (currentUserId: string, filters: { filter: 'for
 
         return projects;
     } catch (e) {
-        console.error("[ProjectsDB] getProjects error:", e);
+        console.warn("[ProjectsDB] getProjects error:", e);
         return [];
     }
 };
@@ -229,7 +229,7 @@ export const applyForRole = async (applicationData: Omit<Application, 'id' | 'cr
 
         return { id: docRef.id, ...newApp };
     } catch (e) {
-        console.error("[ProjectsDB] applyForRole error:", e);
+        console.warn("[ProjectsDB] applyForRole error:", e);
         throw e;
     }
 };
@@ -237,14 +237,18 @@ export const applyForRole = async (applicationData: Omit<Application, 'id' | 'cr
 /**
  * Get Applications (For Founder Dashboard)
  */
-export const getProjectApplications = async (projectId: string) => {
+export const getProjectApplications = async (projectId: string, founderId: string) => {
     try {
         const applicationsRef = collection(db, 'applications');
-        const q = query(applicationsRef, where('projectId', '==', projectId));
+        const q = query(
+            applicationsRef,
+            where('projectId', '==', projectId),
+            where('founderUid', '==', founderId)
+        );
         const snap = await getDocs(q);
         return snap.docs.map(d => ({ id: d.id, ...d.data() } as Application));
     } catch (e) {
-        console.error("[ProjectsDB] getProjectApplications error:", e);
+        console.warn("[ProjectsDB] getProjectApplications error:", e);
         return [];
     }
 };
@@ -260,7 +264,7 @@ export const getUserApplications = async (userUid: string) => {
         const docs = snap.docs.map(d => ({ id: d.id, ...d.data() } as Application));
         return docs.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
     } catch (e) {
-        console.error("[ProjectsDB] getUserApplications error:", e);
+        console.warn("[ProjectsDB] getUserApplications error:", e);
         return [];
     }
 };
@@ -305,7 +309,7 @@ export const updateApplicationStatus = async (applicationId: string, status: 'ac
                     await updateDoc(projectRef, { roles: newRoles });
                 }
             } catch (e) {
-                console.error("Failed to decrement seats", e);
+                console.warn("Failed to decrement seats", e);
             }
 
             // --- NEW: Project Membership & Group Chat Logic ---
@@ -354,7 +358,7 @@ export const updateApplicationStatus = async (applicationId: string, status: 'ac
                 console.log("Project Membership & Group Configured for:", app.applicantUid);
 
             } catch (e) {
-                console.error("Failed to configure project membership/group:", e);
+                console.warn("Failed to configure project membership/group:", e);
                 // We don't throw here to avoid rolling back the acceptance status update
                 // which has already succeeded.
             }
@@ -380,7 +384,7 @@ export const updateApplicationStatus = async (applicationId: string, status: 'ac
 
         return status;
     } catch (e) {
-        console.error("[ProjectsDB] updateApplicationStatus error:", e);
+        console.warn("[ProjectsDB] updateApplicationStatus error:", e);
         throw e;
     }
 };

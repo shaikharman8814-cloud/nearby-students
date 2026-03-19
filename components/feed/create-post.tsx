@@ -66,7 +66,7 @@ export function CreatePost({ onPostCreated, currentScope }: CreatePostProps) {
             setPreviewUrl(null);
             onPostCreated();
         } catch (error) {
-            console.error("Failed to post:", error);
+            console.warn("Failed to post:", error);
             alert("Failed to post. Please try again.");
         } finally {
             setLoading(false);

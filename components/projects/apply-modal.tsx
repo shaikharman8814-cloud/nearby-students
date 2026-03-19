@@ -47,7 +47,7 @@ export function ApplyModal({ project, role, userProfile, onClose }: ApplyModalPr
             toast.success("Application sent successfully!");
             onClose();
         } catch (error: any) {
-            console.error("Application failed", error);
+            console.warn("Application failed", error);
             toast.error(error.message || "Failed to apply");
         } finally {
             setSubmitting(false);

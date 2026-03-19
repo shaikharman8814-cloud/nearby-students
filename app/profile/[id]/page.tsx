@@ -51,7 +51,7 @@ export default function ProfilePage() {
                 })
                 .catch(e => {
                     clearTimeout(timeout);
-                    console.error("Profile load failed", e);
+                    console.warn("Profile load failed", e);
                 })
                 .finally(() => setLoading(false));
 
@@ -75,7 +75,7 @@ export default function ProfilePage() {
                     setResources(data);
                 }
             } catch (e) {
-                console.error(e);
+                console.warn(e);
             } finally {
                 setLoadingContent(false);
             }
@@ -96,7 +96,7 @@ export default function ProfilePage() {
                 const filtered = users.filter(u => u.uid !== uid).slice(0, 4);
                 setSimilarUsers(filtered);
             } catch (e) {
-                console.error("Failed to load similar users", e);
+                console.warn("Failed to load similar users", e);
             }
         };
         loadSimilar();

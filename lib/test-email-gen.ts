@@ -24,12 +24,12 @@ const otpCompiled = compileEmailTemplate(OTP_TEMPLATE, variables);
 if (otpCompiled.includes('Sone Login') && otpCompiled.includes('123456')) {
     console.log('OTP Template: SUCCESS');
 } else {
-    console.error('OTP Template: FAILED');
+    console.warn('OTP Template: FAILED');
 }
 
 const resetCompiled = compileEmailTemplate(RESET_PASSWORD_TEMPLATE, variables);
 if (resetCompiled.includes('Reset your Sone password') && resetCompiled.includes('https://sone.app/reset?token=abc')) {
     console.log('Reset Template: SUCCESS');
 } else {
-    console.error('Reset Template: FAILED');
+    console.warn('Reset Template: FAILED');
 }

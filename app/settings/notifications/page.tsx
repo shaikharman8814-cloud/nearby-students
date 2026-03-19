@@ -41,7 +41,7 @@ export default function NotificationSettingsPage() {
                 toast.success("Notifications Disabled.");
             }
         } catch (e) {
-            console.error(e);
+            console.warn(e);
             toast.error("Something went wrong");
         } finally {
             setProcessing(false);
@@ -112,7 +112,7 @@ export default function NotificationSettingsPage() {
                                 });
                                 toast.success("Test Sent! Check your notifications.");
                             } catch (e) {
-                                console.error(e);
+                                console.warn(e);
                                 toast.error("Failed to send test.");
                             } finally {
                                 setProcessing(false);

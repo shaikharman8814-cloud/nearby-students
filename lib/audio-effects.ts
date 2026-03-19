@@ -49,7 +49,7 @@ export class AudioProcessor {
 
             return finalStream;
         } catch (error) {
-            console.error("Audio processing failed", error);
+            console.warn("Audio processing failed", error);
             return stream;
         }
     }

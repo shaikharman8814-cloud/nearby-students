@@ -105,7 +105,7 @@ export default function GroupsPage() {
                     setSelectedGroupId(myGroups[0].id);
                 }
             } catch (err) {
-                console.error("Error initializing groups:", err);
+                console.warn("Error initializing groups:", err);
             } finally {
                 setLoading(false);
             }
@@ -177,7 +177,7 @@ export default function GroupsPage() {
             setNewMessage('');
             // Reset anon mode after send? Optional. Keeping it persistent is better.
         } catch (error) {
-            console.error("Failed to send message:", error);
+            console.warn("Failed to send message:", error);
         }
     };
 
@@ -200,7 +200,7 @@ export default function GroupsPage() {
             });
 
         } catch (error) {
-            console.error("Upload failed", error);
+            console.warn("Upload failed", error);
             alert("Failed to upload file");
         } finally {
             setIsUploading(false);
@@ -219,7 +219,7 @@ export default function GroupsPage() {
             setNewGroupName('');
             setNewGroupType('custom');
         } catch (error) {
-            console.error(error);
+            console.warn(error);
         } finally {
             setLoading(false);
         }
@@ -232,7 +232,7 @@ export default function GroupsPage() {
             const friends = await getUserConnections(user.uid);
             setMyConnections(friends);
         } catch (error) {
-            console.error(error);
+            console.warn(error);
         } finally {
             setLoadingConnections(false);
         }
@@ -264,7 +264,7 @@ export default function GroupsPage() {
             // Remove from list visually
             setDiscoverGroups(prev => prev.filter(g => g.id !== groupId));
         } catch (e) {
-            console.error(e);
+            console.warn(e);
             alert("Failed to send request");
         }
     };
@@ -312,7 +312,7 @@ export default function GroupsPage() {
             const updatedProfile = await getUserProfile(user.uid);
             setProfile(updatedProfile);
         } catch (e) {
-            console.error(e);
+            console.warn(e);
             alert("Action failed");
         }
     };
@@ -355,7 +355,7 @@ export default function GroupsPage() {
                 alert("Member removed");
             }
         } catch (error) {
-            console.error("Failed to remove member:", error);
+            console.warn("Failed to remove member:", error);
             alert("Failed to remove member");
         }
     };

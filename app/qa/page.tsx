@@ -49,7 +49,7 @@ export default function QAPage() {
                 localStorage.setItem(CACHE_KEY, JSON.stringify(data));
             } catch (e) { }
         } catch (error) {
-            console.error(error);
+            console.warn(error);
         } finally {
             setLoading(false);
         }
@@ -68,7 +68,7 @@ export default function QAPage() {
             setNewCategory('General');
             loadQuestions(); // Refresh
         } catch (error) {
-            console.error(error);
+            console.warn(error);
             alert("Failed to post question");
         } finally {
             setSubmitting(false);

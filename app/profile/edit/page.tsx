@@ -33,7 +33,7 @@ export default function EditProfilePage() {
                     setPreviewUrl(profile.photoURL || null);
                 }
             })
-            .catch(err => console.error("Failed to load profile", err))
+            .catch(err => console.warn("Failed to load profile", err))
             .finally(() => setLoading(false));
     }, [user, authLoading]);
 
@@ -126,7 +126,7 @@ export default function EditProfilePage() {
 
             router.push(`/profile/${user.uid}`);
         } catch (err: any) {
-            console.error(err);
+            console.warn(err);
             // Show a visible error to the user
             alert(`Failed to save profile: ${err.message || 'Unknown error'}. Check console for details.`);
         } finally {
@@ -245,9 +245,13 @@ export default function EditProfilePage() {
                                     setLoading(true);
 
                                     try {
+                                        const token = await user?.getIdToken();
                                         const res = await fetch('/api/enhance-bio', {
                                             method: 'POST',
-                                            headers: { 'Content-Type': 'application/json' },
+                                            headers: {
+                                                'Content-Type': 'application/json',
+                                                'Authorization': `Bearer ${token}`
+                                            },
                                             body: JSON.stringify({
                                                 bio: currentBio,
                                                 interests: interests,
@@ -263,7 +267,7 @@ export default function EditProfilePage() {
                                             setFormData({ ...formData, bio: data.bio });
                                         }
                                     } catch (error) {
-                                        console.error("Enhance failed", error);
+                                        console.warn("Enhance failed", error);
                                         alert("Failed to enhance bio. Please try again.");
                                     } finally {
                                         setLoading(false);

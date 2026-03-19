@@ -122,7 +122,7 @@ export default function CreateProjectPage() {
                     const path = `project-banners/${user.uid}/${Date.now()}_${bannerFile.name}`;
                     bannerUrl = await uploadAttachment(path, bannerFile);
                 } catch (uploadErr) {
-                    console.error("Banner upload failed:", uploadErr);
+                    console.warn("Banner upload failed:", uploadErr);
                     toast.error("Failed to upload banner, project will rely on default.");
                     // Proceed without banner? Or stop? Let's proceed.
                 }

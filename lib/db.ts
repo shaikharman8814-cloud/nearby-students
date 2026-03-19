@@ -40,7 +40,7 @@ export const blockUser = async (currentUserId: string, targetUserId: string) => 
             blockedUsers: arrayUnion(targetUserId)
         });
     } catch (e) {
-        console.error("[DB] blockUser error:", e);
+        console.warn("[DB] blockUser error:", e);
         throw e;
     }
 };
@@ -52,7 +52,7 @@ export const unblockUser = async (currentUserId: string, targetUserId: string) =
             blockedUsers: arrayRemove(targetUserId)
         });
     } catch (e) {
-        console.error("[DB] unblockUser error:", e);
+        console.warn("[DB] unblockUser error:", e);
         throw e;
     }
 };
@@ -114,7 +114,7 @@ export const getUserProfile = async (uid: string, options?: { forceServer?: bool
             }
             return null;
         } catch (e) {
-            console.error("[DB] getUserProfile error:", e);
+            console.warn("[DB] getUserProfile error:", e);
             return null;
         }
     })();
@@ -169,7 +169,7 @@ export const addXp = async (uid: string, amount: number, actionId?: string) => {
         await awardXpFn({ amount, actionId });
         console.log(`[XP] Requested ${amount} XP award for ${uid} via Cloud Functions`);
     } catch (error) {
-        console.error("Error awarding XP via function:", error);
+        console.warn("Error awarding XP via function:", error);
     }
 };
 
@@ -178,26 +178,26 @@ export const getUsers = async (currentUserId?: string, filters: { college?: stri
         const usersRef = collection(db, 'users');
         let q = query(usersRef);
 
-        if (filters.college) {
-            q = query(q, where('college', '==', filters.college));
-        }
-        if (filters.city && !filters.college) {
-            q = query(q, where('city', '==', filters.city));
-        }
+        // We remove the strict Firestore 'where' filters for college/city 
+        // to allow for case-insensitive matching in the JS loop below.
+        // This ensures "MIT" and "mit" are matched correctly.
 
         if (filters.limit) {
             q = query(q, limit(filters.limit));
+        } else {
+            q = query(q, limit(500)); // Increased limit to prevent asymmetric visibility in discovery
         }
 
         const querySnapshot = await getDocs(q);
         const users: UserProfile[] = [];
 
-        querySnapshot.forEach((doc) => {
-            const data = doc.data();
+        querySnapshot.forEach((docSnap) => {
+            const data = docSnap.data();
             const u = {
                 ...data,
-                uid: data.uid || doc.id,
-                displayName: getSafeDisplayName({ ...data, uid: data.uid || doc.id } as any),
+                uid: data.uid || docSnap.id,
+                displayName: decodeURIComponent(getSafeDisplayName({ ...data, uid: data.uid || docSnap.id } as any)),
+                originalDisplayName: decodeURIComponent(data.displayName || ""),
                 college: data.college || "",
                 city: data.city || "",
                 course: data.course || "",
@@ -206,7 +206,7 @@ export const getUsers = async (currentUserId?: string, filters: { college?: stri
                 bio: data.bio || "",
                 isVerified: data.isVerified || false,
                 xp: data.xp ?? 0
-            } as UserProfile;
+            } as UserProfile & { originalDisplayName: string };
 
             if (u.uid === currentUserId) return;
 
@@ -227,7 +227,7 @@ export const getUsers = async (currentUserId?: string, filters: { college?: stri
 
         return users;
     } catch (e) {
-        console.error("[DB] getUsers error:", e);
+        console.warn("[DB] getUsers error:", e);
         return [];
     }
 };
@@ -299,7 +299,7 @@ export const getUserConnectionsMap = async (currentUserId: string): Promise<Reco
         });
         return map;
     } catch (e) {
-        console.error("[DB] getUserConnectionsMap error:", e);
+        console.warn("[DB] getUserConnectionsMap error:", e);
         return {};
     }
 };
@@ -340,7 +340,7 @@ export const sendConnectionRequest = async (currentUserId: string, targetUserId:
     //         isAnonymous: false
     //     });
     // } catch (e) {
-    //     console.error("Failed to notify connection", e);
+    //     console.warn("Failed to notify connection", e);
     // }
 };
 
@@ -397,7 +397,7 @@ export const respondToRequest = async (connectionId: string, status: 'accepted' 
                 // });
             }
         } catch (e) {
-            console.error("Failed to notify acceptance", e);
+            console.warn("Failed to notify acceptance", e);
         }
     }
 };
@@ -439,7 +439,7 @@ export const sendMessage = async (connectionId: string, senderId: string, text: 
                 displayBadge = `Verified ${cleanYear} Year`;
             }
         } catch (e) {
-            console.error("Failed to fetch profile for anonymous context", e);
+            console.warn("Failed to fetch profile for anonymous context", e);
         }
         // Strict: senderName/senderPhoto are undefined
     } else {
@@ -496,7 +496,7 @@ export const sendMessage = async (connectionId: string, senderId: string, text: 
     //         });
     //     }
     // } catch (e) {
-    //     console.error("Error triggering notification in sendMessage:", e);
+    //     console.warn("Error triggering notification in sendMessage:", e);
     // }
 
     const connRef = doc(db, 'connections', connectionId);
@@ -677,7 +677,7 @@ export const subscribeToMessages = (connectionId: string, callback: (messages: {
         const messages = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
         callback(messages);
     }, (err) => {
-        console.error("[DB] subscribeToMessages error:", err);
+        console.warn("[DB] subscribeToMessages error:", err);
     });
 };
 
@@ -711,7 +711,7 @@ export const getUserConversations = async (userId: string) => {
             return new Date(b.lastMessageTimestamp || 0).getTime() - new Date(a.lastMessageTimestamp || 0).getTime();
         });
     } catch (e) {
-        console.error("[DB] getUserConversations error:", e);
+        console.warn("[DB] getUserConversations error:", e);
         return [];
     }
 };
@@ -754,7 +754,7 @@ export const getUserGroups = async (userId: string): Promise<Group[]> => {
         const snapshot = await getDocs(q);
         return snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id } as Group));
     } catch (e) {
-        console.error("[DB] getUserGroups error:", e);
+        console.warn("[DB] getUserGroups error:", e);
         return [];
     }
 };
@@ -773,7 +773,7 @@ export const getDiscoverableGroups = async (userId: string, college?: string): P
         // Filter by college if provided (client side for simplicity mostly)
         return groups.filter(g => !g.members.includes(userId) && (!college || !g.college || g.college === college));
     } catch (e) {
-        console.error("[DB] getDiscoverableGroups error:", e);
+        console.warn("[DB] getDiscoverableGroups error:", e);
         return [];
     }
 };
@@ -816,7 +816,7 @@ export const getGroupRequests = async (groupId: string) => {
         }
         return requests;
     } catch (e) {
-        console.error("[DB] getGroupRequests error:", e);
+        console.warn("[DB] getGroupRequests error:", e);
         return [];
     }
 };
@@ -873,7 +873,7 @@ export const getGroupMembers = async (groupId: string): Promise<string[]> => {
             return snap.data().members || [];
         }
     } catch (e) {
-        console.error("[DB] getGroupMembers error:", e);
+        console.warn("[DB] getGroupMembers error:", e);
     }
     return [];
 };
@@ -927,7 +927,7 @@ export const getOrJoinModuleGroup = async (userId: string, college: string, cour
             return newGroup;
         }
     } catch (e) {
-        console.error("[DB] getOrJoinModuleGroup error:", e);
+        console.warn("[DB] getOrJoinModuleGroup error:", e);
         return null;
     }
 };
@@ -971,7 +971,7 @@ export const getUserConnections = async (userId: string): Promise<UserProfile[]>
         }
         return friends;
     } catch (e) {
-        console.error("[DB] getUserConnections error:", e);
+        console.warn("[DB] getUserConnections error:", e);
         return [];
     }
 };
@@ -1030,7 +1030,7 @@ export const sendGroupMessage = async (groupId: string, senderId: string, text: 
             lastMessageTimestamp: new Date().toISOString()
         });
     } catch (e) {
-        console.error("[DB] sendGroupMessage error:", e);
+        console.warn("[DB] sendGroupMessage error:", e);
         throw e;
     }
 };
@@ -1054,7 +1054,7 @@ export const subscribeToGroupMessages = (groupId: string, callback: (messages: G
 
         callback(messages);
     }, (err) => {
-        console.error("[DB] subscribeToGroupMessages error:", err);
+        console.warn("[DB] subscribeToGroupMessages error:", err);
     });
 };
 
@@ -1171,7 +1171,7 @@ export const getSmartSuggestions = async (currentUserId: string): Promise<UserPr
             return (b.score || 0) - (a.score || 0); // High match second
         });
     } catch (e) {
-        console.error("[DB] getSmartSuggestions error:", e);
+        console.warn("[DB] getSmartSuggestions error:", e);
         return [];
     }
 };
@@ -1301,7 +1301,7 @@ export const getPosts = async (user: UserProfile, scope: 'college' | 'city' | 'g
 
         return posts;
     } catch (e) {
-        console.error("Error fetching posts:", e);
+        console.warn("Error fetching posts:", e);
         return [];
     }
 };
@@ -1335,7 +1335,7 @@ export const savePost = async (userId: string, post: Post) => {
             }
         }
     } catch (e) {
-        console.error("XP Feed Save Award Failed", e);
+        console.warn("XP Feed Save Award Failed", e);
     }
 };
 
@@ -1366,7 +1366,7 @@ export const getSavedPosts = async (userId: string) => {
         }
         return posts.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
     } catch (e) {
-        console.error("[DB] getSavedPosts error:", e);
+        console.warn("[DB] getSavedPosts error:", e);
         return [];
     }
 };
@@ -1376,7 +1376,7 @@ export const checkIsSaved = async (userId: string, postId: string) => {
         const docSnap = await getDoc(doc(db, 'users', userId, 'saved_posts', postId));
         return docSnap.exists();
     } catch (e) {
-        console.error("[DB] checkIsSaved error:", e);
+        console.warn("[DB] checkIsSaved error:", e);
         return false;
     }
 }
@@ -1422,7 +1422,7 @@ export const toggleLikePost = async (postId: string, userId: string) => {
             addXp(data.authorId, 2, `like_${postId}`);
         }
     } catch (e) {
-        console.error("[DB] toggleLikePost error:", e);
+        console.warn("[DB] toggleLikePost error:", e);
     }
 };
 
@@ -1461,7 +1461,7 @@ export const getComments = async (postId: string) => {
             return { ...data, id: doc.id };
         });
     } catch (e) {
-        console.error("[DB] getComments error:", e);
+        console.warn("[DB] getComments error:", e);
         return [];
     }
 };
@@ -1533,7 +1533,7 @@ export const getResources = async (filters: { college?: string; course?: string;
         // Client-side sort
         return resources.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
     } catch (e) {
-        console.error("[DB] getResources error:", e);
+        console.warn("[DB] getResources error:", e);
         return [];
     }
 };
@@ -1588,7 +1588,7 @@ export const getResourceComments = async (resourceId: string) => {
         const snapshot = await getDocs(q);
         return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Comment));
     } catch (e) {
-        console.error("[DB] getResourceComments error:", e);
+        console.warn("[DB] getResourceComments error:", e);
         return [];
     }
 };
@@ -1652,7 +1652,7 @@ export const getUserPosts = async (userId: string) => {
         // Client-side sort
         return posts.sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
     } catch (e) {
-        console.error("[DB] getUserPosts error:", e);
+        console.warn("[DB] getUserPosts error:", e);
         return [];
     }
 };
@@ -1668,7 +1668,7 @@ export const getUserResources = async (userId: string) => {
         // Client-side sort
         return resources.sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
     } catch (e) {
-        console.error("[DB] getUserResources error:", e);
+        console.warn("[DB] getUserResources error:", e);
         return [];
     }
 };
@@ -1775,7 +1775,7 @@ export const getStories = async (user: UserProfile, scope: 'college' | 'city' | 
 
         return stories.sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
     } catch (e) {
-        console.error("Error fetching stories:", e);
+        console.warn("Error fetching stories:", e);
         return [];
     }
 };
@@ -1819,7 +1819,7 @@ export const getHighlights = async (userId: string) => {
         const snapshot = await getDocs(q);
         return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Highlight));
     } catch (e) {
-        console.error("[DB] getHighlights error:", e);
+        console.warn("[DB] getHighlights error:", e);
         return [];
     }
 };
@@ -1887,7 +1887,7 @@ export const createNotification = async (userId: string, notification: Omit<Noti
             seen: false
         });
     } catch (e) {
-        console.error("Error creating notification:", e);
+        console.warn("Error creating notification:", e);
     }
 };
 
@@ -1912,7 +1912,7 @@ export const markNotificationAsRead = async (userId: string, notificationId: str
         const notifRef = doc(db, 'users', userId, 'notifications', notificationId);
         await updateDoc(notifRef, { seen: true });
     } catch (e) {
-        console.error("Error marking notification as read:", e);
+        console.warn("Error marking notification as read:", e);
     }
 };
 
@@ -1925,7 +1925,7 @@ export const subscribeToNotifications = (userId: string, callback: (notification
         const notifications = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Notification));
         callback(notifications);
     }, (err) => {
-        console.error("[DB] subscribeToNotifications error:", err);
+        console.warn("[DB] subscribeToNotifications error:", err);
     });
 };
 
@@ -1947,7 +1947,7 @@ export async function updateUserCallStats(uid: string, durationSeconds: number, 
 
         await updateDoc(userRef, updates);
     } catch (error) {
-        console.error("Error updating call stats:", error);
+        console.warn("Error updating call stats:", error);
     }
 }
 // --- Global Call Logs (Schema Matching) ---
@@ -1983,7 +1983,7 @@ export async function logCallEvent(data: {
         const payload = JSON.parse(JSON.stringify(data));
         await setDoc(logRef, payload, { merge: true });
     } catch (error) {
-        console.error("Error logging call event:", error);
+        console.warn("Error logging call event:", error);
     }
 }
 
@@ -2067,7 +2067,7 @@ export const checkFriendsBirthdays = async (userId: string) => {
             }
         }
     } catch (e) {
-        console.error("Error checking birthdays:", e);
+        console.warn("Error checking birthdays:", e);
     }
 };
 
@@ -2143,7 +2143,7 @@ export const getQuestions = async (category?: string) => {
         }
         return questions;
     } catch (e) {
-        console.error("[DB] getQuestions error:", e);
+        console.warn("[DB] getQuestions error:", e);
         return [];
     }
 };
@@ -2156,7 +2156,7 @@ export const getQuestion = async (questionId: string) => {
             return { ...snap.data(), id: snap.id } as Question;
         }
     } catch (e) {
-        console.error("[DB] getQuestion error:", e);
+        console.warn("[DB] getQuestion error:", e);
     }
     return null;
 };
@@ -2187,7 +2187,7 @@ export const voteQuestion = async (questionId: string, userId: string, type: 'up
             });
         }
     } catch (e) {
-        console.error("[DB] voteQuestion error:", e);
+        console.warn("[DB] voteQuestion error:", e);
     }
 };
 
@@ -2260,7 +2260,7 @@ export const getAnswers = async (questionId: string) => {
                 return b.upvotes - a.upvotes;
             });
     } catch (e) {
-        console.error("[DB] getAnswers error:", e);
+        console.warn("[DB] getAnswers error:", e);
         return [];
     }
 };
@@ -2291,7 +2291,7 @@ export const voteAnswer = async (questionId: string, answerId: string, userId: s
                 await addXp(data.authorId, 20, `answer_${answerId}`);
             }
         } catch (e) {
-            console.error("XP Q&A Award Failed", e);
+            console.warn("XP Q&A Award Failed", e);
         }
     }
 };
@@ -2308,7 +2308,7 @@ export const submitFeedback = async (message: string, userId?: string, email?: s
         });
         console.log("Feedback submitted successfully!");
     } catch (error) {
-        console.error("Error submitting feedback:", error);
+        console.warn("Error submitting feedback:", error);
     }
 };
 
@@ -2328,7 +2328,7 @@ export const awardProfileXP = async (uid: string) => {
             }
         }
     } catch (e) {
-        console.error("[DB] awardProfileXP error:", e);
+        console.warn("[DB] awardProfileXP error:", e);
     }
     return false; // Already awarded or error
 };

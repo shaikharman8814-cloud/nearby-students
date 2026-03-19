@@ -24,7 +24,7 @@ export default function MafiaLandingPage() {
             const code = await createGame(user.uid);
             router.push(`/games/mafia/${code}`);
         } catch (err) {
-            console.error(err);
+            console.warn(err);
             setError("Failed to create game. Please try again.");
         } finally {
             setIsCreating(false);
@@ -40,7 +40,7 @@ export default function MafiaLandingPage() {
             const code = await joinGame(roomCode, user.uid);
             router.push(`/games/mafia/${code}`);
         } catch (err: any) {
-            console.error(err);
+            console.warn(err);
             setError(err.message || "Failed to join game.");
         } finally {
             setIsJoining(false);

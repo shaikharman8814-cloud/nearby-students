@@ -24,7 +24,7 @@ export const OTP_TEMPLATE = `
         </p>
         
         <div style="background-color: #f4f4f5; border-radius: 12px; padding: 24px; display: inline-block; margin: 0 auto;">
-          <span style="font-family: 'SF Mono', SFMono-Regular, Consolas, 'Liberation Mono', Menlo, monospace; font-size: 32px; font-weight: 700; letter-spacing: 8px; color: #000000; display: block;">{CODE}</span>
+          <span style="font-family: 'SF Mono', SFMono-Regular, Consolas, 'Liberation Mono', Menlo, monospace; font-size: 32px; font-weight: 700; letter-spacing: 8px; color: #000000; display: block;">{OTP_CODE}</span>
         </div>
       </div>
 

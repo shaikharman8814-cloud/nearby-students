@@ -117,7 +117,7 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
                         debug: 0 // Disable all internal logs
                     });
                 } catch (peerError: any) {
-                    console.error("[CallSystem] Peer Constructor Failed:", peerError);
+                    console.warn("[CallSystem] Peer Constructor Failed:", peerError);
                     if (peerError.name === 'SecurityError') {
                         setError("Video calls require a secure connection (HTTPS).");
                     } else {
@@ -172,14 +172,20 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
                         setupMediaHandlers(call);
                         setCallState('incall');
                     } catch (e) {
-                        console.error("[CallSystem] Answer failed", e);
+                        console.warn("[CallSystem] Answer failed", e);
                         setError("Could not answer call.");
                     }
                 });
 
                 createdPeer.on('error', (err: any) => {
-                    // Suppress "Lost connection" noise
-                    if (err?.type === 'network' || err?.message?.includes('Lost connection')) {
+                    // Suppress "Lost connection", "Could not connect", "peer-unavailable" noise
+                    if (
+                        err?.type === 'network' ||
+                        err?.type === 'peer-unavailable' ||
+                        err?.message?.includes('Lost connection') ||
+                        err?.message?.includes('Could not connect to peer')
+                    ) {
+                        console.warn("[CallSystem] Ignored expected PeerJS error:", err.type || err.message);
                         return;
                     }
 
@@ -199,7 +205,7 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
                         return;
                     }
 
-                    console.error("[CallSystem] Peer Error:", err);
+                    console.warn("[CallSystem] Peer Error:", err);
                     setError(err.message || "Connection error occurred.");
                 });
 
@@ -212,7 +218,7 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
                 }
 
             } catch (e) {
-                console.error("Peer init failed", e);
+                console.warn("[CallSystem] Peer init failed", e);
             }
         };
 
@@ -247,15 +253,22 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
                 let newestCallTimestamp = 0;
 
                 snapshot.docChanges().forEach((change) => {
-                    if (change.type === 'added') {
+                    if (change.type === 'added' || change.type === 'modified') {
                         const data = change.doc.data();
 
                         const now = Date.now();
-                        const callTime = data.createdAt?.toMillis ? data.createdAt.toMillis() : now;
-                        if (now - callTime > 60000) return;
+                        let callTimeMillis = now;
+                        if (data.createdAt && typeof data.createdAt.toMillis === 'function') {
+                            callTimeMillis = data.createdAt.toMillis();
+                        } else if (data.createdAt && typeof data.createdAt === 'number') {
+                            callTimeMillis = data.createdAt;
+                        }
 
-                        if (data.createdAt && data.createdAt.toMillis() > newestCallTimestamp) {
-                            newestCallTimestamp = data.createdAt.toMillis();
+                        // Ignore calls older than 60 seconds
+                        if (now - callTimeMillis > 60000) return;
+
+                        if (callTimeMillis >= newestCallTimestamp) {
+                            newestCallTimestamp = callTimeMillis;
                             newestCallDoc = change.doc;
                             newestCallData = data;
                         }
@@ -292,7 +305,7 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
                     setIsVideoEnabled(newestCallData.isVideo !== false);
                 }
             }, (err) => {
-                console.error("[CallSystem] Messaging signal error:", err);
+                console.warn("[CallSystem] Messaging signal error:", err);
             });
             return unsub;
         };
@@ -321,7 +334,7 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
         });
 
         call.on('error', (err: any) => {
-            console.error("[CallSystem] Call Error:", err);
+            console.warn("[CallSystem] Call Error:", err);
             cleanup();
         });
     };
@@ -385,7 +398,7 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
                 });
 
             } catch (e) {
-                console.error("Logging error:", e);
+                console.warn("[CallSystem] Logging error:", e);
             }
         }
 
@@ -487,12 +500,12 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
                     setTimeout(cleanup, 2000);
                 }
             }, (err) => {
-                console.error("[CallSystem] Call acceptance listener error:", err);
+                console.warn("[CallSystem] Call acceptance listener error:", err);
             });
             unsubRef.current = unsub;
 
         } catch (e) {
-            console.error("Start Call Failed", e);
+            console.warn("[CallSystem] Start Call Failed", e);
             setError("Failed to start call.");
             cleanup();
         }
@@ -528,7 +541,7 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
                     responderPeerId: peerRef.current?.id || user?.uid // Crucial for handshake if ID changed
                 });
             } catch (firestoreError) {
-                console.error("[CallSystem] Firestore signal update failed:", firestoreError);
+                console.warn("[CallSystem] Firestore signal update failed:", firestoreError);
                 setError("Failed to accept call signal.");
                 cleanup();
             }
@@ -536,7 +549,7 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
             // Wait for incoming Peer Connection (handled in useEffect)
 
         } catch (e) {
-            console.error("Accept Failed", e);
+            console.warn("[CallSystem] Accept Failed", e);
             setError("Failed to access media.");
         }
     };
@@ -550,7 +563,7 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
                 });
             }
         } catch (e) {
-            console.error("[CallSystem] Reject call failed:", e);
+            console.warn("[CallSystem] Reject call failed:", e);
         } finally {
             cleanup();
         }
@@ -568,7 +581,7 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
                 } catch (e) { }
             }
         } catch (e) {
-            console.error("[CallSystem] End call failed:", e);
+            console.warn("[CallSystem] End call failed:", e);
         } finally {
             cleanup();
         }
@@ -596,7 +609,7 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
             currentCallDocId.current = null;
             activeCallRef.current = null;
         } catch (e) {
-            console.error("[CallSystem] Emergency end failed:", e);
+            console.warn("[CallSystem] Emergency end failed:", e);
         }
     };
 
@@ -650,7 +663,7 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
                     }
                 }
             } catch (e) {
-                console.error("Failed to enable video:", e);
+                console.warn("[CallSystem] Failed to enable video:", e);
                 setError("Camera access failed");
             }
         }

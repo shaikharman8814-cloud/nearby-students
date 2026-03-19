@@ -35,7 +35,7 @@ export function Notifications() {
                 }
             }
         } catch (error) {
-            console.error('An error occurred while retrieving token. ', error);
+            console.warn('An error occurred while retrieving token. ', error);
         }
     };
 

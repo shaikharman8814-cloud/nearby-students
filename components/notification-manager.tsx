@@ -52,7 +52,7 @@ export function NotificationManager({ children }: { children: ReactNode }) {
         }
 
         if (user) {
-            checkFriendsBirthdays(user.uid).catch(console.error);
+            checkFriendsBirthdays(user.uid).catch(console.warn);
         }
 
         const unsubscribe = subscribeToNotifications(user.uid, (newNotifs) => {

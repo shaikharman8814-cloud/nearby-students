@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { ArrowLeft, Shield, Users, MapPin, Lock, GraduationCap } from 'lucide-react';
+import { ArrowLeft, Shield, Users, MapPin, Lock, GraduationCap, Rocket, Video } from 'lucide-react';
 
 export default function AboutPage() {
     return (
@@ -66,6 +66,26 @@ export default function AboutPage() {
                         <h3 className="text-lg font-semibold">Community First</h3>
                         <p className="text-muted-foreground">
                             Share notes, ask doubts, finding housing, or just vent about finals. Built for student life.
+                        </p>
+                    </div>
+
+                    <div className="p-6 rounded-2xl bg-card border border-border space-y-4">
+                        <div className="w-10 h-10 rounded-full bg-cyan-500/10 flex items-center justify-center">
+                            <Rocket className="w-5 h-5 text-cyan-500" />
+                        </div>
+                        <h3 className="text-lg font-semibold">Project Collaboration</h3>
+                        <p className="text-muted-foreground">
+                            Discover and join student-led projects nearby or remotely. Build teams, collaborate on ideas, and level up your skills together.
+                        </p>
+                    </div>
+
+                    <div className="p-6 rounded-2xl bg-card border border-border space-y-4">
+                        <div className="w-10 h-10 rounded-full bg-pink-500/10 flex items-center justify-center">
+                            <Video className="w-5 h-5 text-pink-500" />
+                        </div>
+                        <h3 className="text-lg font-semibold">Live Calls & Video</h3>
+                        <p className="text-muted-foreground">
+                            Jump into encrypted voice and video calls with your peers instantly. Features anonymous modes to help break the ice safely.
                         </p>
                     </div>
                 </section>

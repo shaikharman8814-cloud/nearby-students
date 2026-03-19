@@ -39,7 +39,7 @@ export function AuthWrappers({ children }: { children: React.ReactNode }) {
     }, [user]);
 
     // List of paths that should NOT have the sidebar/header shell
-    const EXCLUDED_PATHS = ['/login', '/signup', '/register', '/about', '/landing'];
+    const EXCLUDED_PATHS = ['/login', '/signup', '/register', '/about', '/landing', '/reset-password'];
     const isExcluded = pathname && EXCLUDED_PATHS.some(path => pathname.startsWith(path));
 
     // Requirement: Hide navigation on onboarding page for new profiles
@@ -61,7 +61,7 @@ export function AuthWrappers({ children }: { children: React.ReactNode }) {
     }
 
     return (
-        <div className={`min-h-[100dvh] transition-all duration-300 ${layout === 'sidebar' ? 'lg:pl-64 pr-0' : ''}`}>
+        <div className={`min-h-[100dvh] transition-all duration-300 ${layout === 'sidebar' ? 'md:pl-64' : ''}`}>
             {layout === 'sidebar' && (
                 <>
                     <SidebarNav isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} />

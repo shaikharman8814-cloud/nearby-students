@@ -47,7 +47,7 @@ export default function ProjectDetailsPage() {
                 }
 
             } catch (e) {
-                console.error("Failed to load project", e);
+                console.warn("Failed to load project", e);
             } finally {
                 setLoading(false);
                 setCheckingApp(false);
@@ -85,7 +85,7 @@ export default function ProjectDetailsPage() {
                 roleTitle
             } as any);
         } catch (e: any) {
-            console.error(e);
+            console.warn(e);
             toast.error(e.message || "Failed to apply");
         } finally {
             setApplyingRole(null);

@@ -94,7 +94,7 @@ export default function GroupChatPage() {
                 router.push('/groups');
             }
         }, (err) => {
-            console.error("[Groups] Group details error:", err);
+            console.warn("[Groups] Group details error:", err);
             setLoading(false);
             if (err.code === 'permission-denied') {
                 toast.error("You don't have permission to access this group.");
@@ -117,7 +117,7 @@ export default function GroupChatPage() {
             setMessages(msgs);
             setTimeout(() => scrollRef.current?.scrollIntoView({ behavior: 'smooth' }), 100);
         }, (err) => {
-            console.error("[Groups] Messages error:", err);
+            console.warn("[Groups] Messages error:", err);
         });
 
         return () => {
@@ -138,7 +138,7 @@ export default function GroupChatPage() {
             );
             setMemberProfiles(profiles.filter(p => !!p));
         } catch (e) {
-            console.error(e);
+            console.warn(e);
         } finally {
             setLoadingMembers(false);
         }
@@ -157,7 +157,7 @@ export default function GroupChatPage() {
             setNewChannelName('');
             setCreateChannelOpen(false);
         } catch (error) {
-            console.error(error);
+            console.warn(error);
             alert("Failed to create channel");
         }
     };
@@ -180,7 +180,7 @@ export default function GroupChatPage() {
             );
             setSearchResults(filtered);
         } catch (error) {
-            console.error(error);
+            console.warn(error);
         } finally {
             setSearching(false);
         }
@@ -193,7 +193,7 @@ export default function GroupChatPage() {
             await addMemberToGroup(group.id, friendId);
             setSearchResults(prev => prev.filter(f => f.uid !== friendId));
         } catch (error) {
-            console.error(error);
+            console.warn(error);
         }
     };
 
@@ -204,7 +204,7 @@ export default function GroupChatPage() {
             const { removeMemberFromGroup } = await import('@/lib/groups');
             await removeMemberFromGroup(groupId, memberId);
         } catch (error) {
-            console.error(error);
+            console.warn(error);
             alert("Failed to remove member");
         }
     }

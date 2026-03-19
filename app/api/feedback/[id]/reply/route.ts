@@ -29,7 +29,7 @@ async function verifyAdmin(req: NextRequest) {
 
         return null; // Not an admin
     } catch (error) {
-        console.error("[Feedback Reply API] Token verification failed:", error);
+        console.warn("[Feedback Reply API] Token verification failed:", error);
         return null;
     }
 }
@@ -101,7 +101,7 @@ export async function POST(
                 await adminMessaging.send(message);
                 console.log(`[Feedback Reply] Notification sent to token: ${storedFcmToken.substring(0, 10)}...`);
             } catch (fcmError) {
-                console.error("[Feedback Reply] FCM error:", fcmError);
+                console.warn("[Feedback Reply] FCM error:", fcmError);
                 // "If fcmToken missing: Skip notification silently" - implies simple error logging is fine, don't fail request
             }
         } else {
@@ -111,7 +111,7 @@ export async function POST(
 
         return NextResponse.json({ success: true, status: 'replied' });
     } catch (error: any) {
-        console.error("[Feedback Reply API] Error:", error);
+        console.warn("[Feedback Reply API] Error:", error);
         return NextResponse.json({
             error: error.message || 'Internal server error',
             stack: error.stack

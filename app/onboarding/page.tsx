@@ -36,7 +36,7 @@ export default function OnboardingPage() {
                     }
                 }
             })
-            .catch(err => console.error("Failed to load profile", err))
+            .catch(err => console.warn("Failed to load profile", err))
             .finally(() => setLoading(false));
     }, [user, authLoading, router]);
 
@@ -136,7 +136,7 @@ export default function OnboardingPage() {
             // Redirect to home
             router.push('/');
         } catch (err: any) {
-            console.error(err);
+            console.warn(err);
             alert(`Failed to save profile: ${err.message || 'Unknown error'}`);
         } finally {
             setSaving(false);

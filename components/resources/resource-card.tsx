@@ -51,24 +51,76 @@ export function ResourceCard({ resource, currentUserId }: ResourceCardProps) {
     };
 
     const handleDownload = async () => {
-        // Increment counter
+        if (!resource.fileUrl) {
+            console.warn("Missing fileUrl for resource:", resource.id);
+            return;
+        }
+
+        // Increment counter - properly await to catch permission errors silently
         setDownloadCount(prev => prev + 1);
-        incrementDownloadCount(resource.id);
-
-        // Handle Data URIs (Base64) or regular URLs
         try {
-            const link = document.createElement('a');
-            link.href = resource.fileUrl;
+            await incrementDownloadCount(resource.id);
+        } catch (err) {
+            console.warn("Permission denied for stats update, continuing download anyway.");
+        }
 
-            // Set download attribute to force download instead of open
-            // Use title or a default name
-            link.download = resource.title || 'download';
+        try {
+            const fileName = resource.fileName || `${resource.title || 'resource'}.pdf`;
+            const url = resource.fileUrl;
 
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
+            // STRATEGY: Always use Blob for maximum compatibility with the 'download' attribute.
+            let blob;
+
+            if (url.startsWith('data:')) {
+                try {
+                    // Manually parse Data URI to avoid Content Security Policy (connect-src) blocks
+                    const parts = url.split(',');
+                    if (parts.length < 2) throw new Error("Invalid Data URI");
+
+                    const mimeMatch = parts[0].match(/:(.*?);/);
+                    const mime = mimeMatch ? mimeMatch[1] : 'application/octet-stream';
+                    const bstr = atob(parts[1]);
+                    let n = bstr.length;
+                    const u8arr = new Uint8Array(n);
+                    while (n--) {
+                        u8arr[n] = bstr.charCodeAt(n);
+                    }
+                    blob = new Blob([u8arr], { type: mime });
+                } catch (base64Err) {
+                    console.warn("Base64 conversion failed, falling back to direct link:", base64Err);
+                    // Fallback to direct data URI navigation if manual conversion fails
+                    const link = document.createElement('a');
+                    link.href = url;
+                    link.download = fileName;
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+                    return;
+                }
+            } else {
+                // Remote URL - Fetch as blob to force 'download' behavior
+                const response = await fetch(url);
+                if (!response.ok) throw new Error("Network response was not ok");
+                blob = await response.blob();
+            }
+
+            if (blob) {
+                const blobUrl = URL.createObjectURL(blob);
+                const link = document.createElement('a');
+                link.href = blobUrl;
+                link.download = fileName;
+
+                // For some browsers (Safari/Mobile), the link must be in the DOM
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+
+                // Extended cleanup timeout
+                setTimeout(() => URL.revokeObjectURL(blobUrl), 20000);
+            }
         } catch (e) {
-            console.error("Download failed, falling back to window.open", e);
+            console.warn("Advanced download failed, falling back to basic open", e);
+            // Final fallback: try to open in a new tab
             window.open(resource.fileUrl, '_blank');
         }
     };
@@ -99,7 +151,7 @@ export function ResourceCard({ resource, currentUserId }: ResourceCardProps) {
 
             await addResourceComment(resource.id, tempInfo);
         } catch (error) {
-            console.error("Failed to post comment", error);
+            console.warn("Failed to post comment", error);
         } finally {
             setIsPostingComment(false);
         }

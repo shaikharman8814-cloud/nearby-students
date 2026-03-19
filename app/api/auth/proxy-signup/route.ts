@@ -81,7 +81,7 @@ export async function POST(reqRequest: Request) {
         });
 
     } catch (error: any) {
-        console.error('Proxy Signup Error:', error);
+        console.warn('Proxy Signup Error:', error);
         return NextResponse.json({
             error: 'Server error during signup',
             details: error.message

@@ -88,7 +88,7 @@ export default function ActiveGameView({ game, players, currentUser }: ActiveGam
             setSelectedPlayerId(null);
         } catch (e) {
             toast.error("Action Failed");
-            console.error(e);
+            console.warn(e);
         } finally {
             setIsProcessing(false);
         }

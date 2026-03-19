@@ -97,7 +97,7 @@ export default function ProjectsPage() {
                 const apps = await getUserApplications(user.uid);
                 setMyApplications(apps);
             } catch (e) {
-                console.error("Failed to load projects", e);
+                console.warn("Failed to load projects", e);
             } finally {
                 setLoading(false);
             }

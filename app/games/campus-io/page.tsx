@@ -50,7 +50,7 @@ export default function CampusIoPage() {
 
                 setNetwork(net);
             } catch (e) {
-                console.error("Network Init Failed", e);
+                console.warn("Network Init Failed", e);
                 setStatus("Connection Failed");
                 initializingRef.current = false;
             }

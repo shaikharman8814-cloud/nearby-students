@@ -54,10 +54,10 @@ export function CallOverlay() {
                 remoteVideoRef.current.srcObject = finalStream;
                 remoteVideoRef.current.play().catch(e => {
                     if (e.name === 'AbortError') return;
-                    console.error("Remote play error:", e);
+                    console.warn("Remote play error:", e);
                 });
             } catch (err) {
-                console.error("Error setting up audio stream:", err);
+                console.warn("Error setting up audio stream:", err);
                 remoteVideoRef.current.srcObject = remoteStream; // Fallback
             }
         }

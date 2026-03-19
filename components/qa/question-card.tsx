@@ -29,7 +29,7 @@ export function QuestionCard({ question }: QuestionCardProps) {
         try {
             await voteQuestion(question.id, user.uid, newHasUpvoted ? 'up' : 'remove');
         } catch (error) {
-            console.error("Vote failed", error);
+            console.warn("Vote failed", error);
             // Revert
             setHasUpvoted(!newHasUpvoted);
             setUpvotes(prev => !newHasUpvoted ? prev + 1 : prev - 1);

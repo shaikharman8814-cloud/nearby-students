@@ -27,7 +27,7 @@ export class ErrorBoundary extends Component<Props, State> {
         // You can log the error to an error reporting service here
         // But we avoid console spamming per requirements
         if (this.props.isAdmin) {
-            console.error("ErrorBoundary caught error:", error, errorInfo);
+            console.warn("ErrorBoundary caught error:", error, errorInfo);
         }
     }
 

@@ -57,7 +57,7 @@ export default function AdminFeedbackPage() {
             }
         } catch (e) {
             clearTimeout(timeout);
-            console.error("Admin check failed", e);
+            console.warn("Admin check failed", e);
             setIsAdmin(false);
         }
     }
@@ -124,14 +124,14 @@ export default function AdminFeedbackPage() {
                 setFeedback(enrichedFeedback);
             } catch (err) {
                 clearTimeout(timeout);
-                console.error("Error enriching feedback", err);
+                console.warn("Error enriching feedback", err);
                 setFeedback(feedbackItems);
             } finally {
                 setLoading(false);
             }
         }, (err) => {
             clearTimeout(timeout);
-            console.error("Real-time feedback error:", err);
+            console.warn("Real-time feedback error:", err);
             setLoading(false);
         });
 
@@ -163,11 +163,11 @@ export default function AdminFeedbackPage() {
                 // fetchFeedback(); // Handled by real-time listener
             } else {
                 const data = await res.json();
-                console.error("Reply API Error:", data);
+                console.warn("Reply API Error:", data);
                 toast.error(data.error || "Failed to send reply");
             }
         } catch (err) {
-            console.error("Reply failed", err);
+            console.warn("Reply failed", err);
             toast.error("Network error. Please try again.");
         } finally {
             setSubmitting(false);

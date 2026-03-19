@@ -22,7 +22,7 @@ export function DiscoveryFeed() {
     const [unit, setUnit] = useState<'km' | 'miles'>('km');
 
     useEffect(() => {
-        let timeout: NodeJS.Timeout;
+        let timeout: ReturnType<typeof setTimeout>;
 
         async function loadData() {
             setLoading(true);
@@ -68,15 +68,20 @@ export function DiscoveryFeed() {
                 setCurrentUserProfile(profile);
                 setConnectionMap(connMap);
 
-                const normalizedUsers = fetchedUsers.map(u => ({
-                    ...u,
-                    displayName: getSafeDisplayName(u),
-                    college: u.college || "",
-                    city: u.city || "",
-                    course: u.course || "",
-                    bio: u.bio || "",
-                    distance: undefined
-                }));
+                const normalizedUsers = fetchedUsers.map(u => {
+                    const isOnline = u.lastActive ? (new Date().getTime() - new Date(u.lastActive).getTime() < 1000 * 60 * 5) : false;
+                    return {
+                        ...u,
+                        displayName: getSafeDisplayName(u),
+                        originalDisplayName: (u as any).originalDisplayName || u.displayName || "",
+                        college: u.college || "",
+                        city: u.city || "",
+                        course: u.course || "",
+                        bio: u.bio || "",
+                        distance: undefined,
+                        isOnline
+                    };
+                }).sort((a, b) => (b.isOnline ? 1 : 0) - (a.isOnline ? 1 : 0));
 
                 setUsers(normalizedUsers);
                 setLoading(false);
@@ -89,12 +94,13 @@ export function DiscoveryFeed() {
                         const filters = {
                             college: filter === 'college' ? profile.college : undefined,
                             city: filter === 'city' ? profile.city : undefined,
-                            limit: 100
+                            limit: 500
                         };
                         const allUsers = await getUsers(user.uid, filters);
                         const normalizedAll = allUsers.map(u => ({
                             ...u,
-                            displayName: getSafeDisplayName(u),
+                            displayName: decodeURIComponent(u.displayName || ""),
+                            originalDisplayName: decodeURIComponent((u as any).originalDisplayName || u.displayName || ""),
                             college: u.college || "",
                             city: u.city || "",
                             course: u.course || "",
@@ -106,44 +112,64 @@ export function DiscoveryFeed() {
                         if (!currentLoc && navigator.geolocation) {
                             try {
                                 const pos = await new Promise<GeolocationPosition>((res, rej) => {
-                                    navigator.geolocation.getCurrentPosition(res, rej, { timeout: 3000 });
+                                    navigator.geolocation.getCurrentPosition(res, rej, {
+                                        timeout: 2000,
+                                        enableHighAccuracy: false
+                                    });
                                 });
                                 currentLoc = { lat: pos.coords.latitude, lng: pos.coords.longitude };
                             } catch (e) { }
                         }
 
                         if (currentLoc) {
-                            const sortedUsers = normalizedAll.map(u => ({
-                                ...u,
-                                distance: currentLoc ? calculateDistance(currentLoc.lat, currentLoc.lng, u.location?.lat || 0, u.location?.lng || 0, unit) : undefined
-                            })).sort((a, b) => (a.distance || 9999) - (b.distance || 9999));
+                            const sortedUsers = normalizedAll.map(u => {
+                                let distance = undefined;
+                                if (u.location?.lat && u.location?.lng) {
+                                    distance = calculateDistance(currentLoc.lat, currentLoc.lng, u.location.lat, u.location.lng, unit);
+                                }
+                                const isOnline = u.lastActive ? (new Date().getTime() - new Date(u.lastActive).getTime() < 1000 * 60 * 5) : false;
+                                return { ...u, distance, isOnline };
+                            })
+                                .sort((a, b) => {
+                                    // Primary: Online status
+                                    if (a.isOnline !== b.isOnline) return a.isOnline ? -1 : 1;
+
+                                    // Secondary: Distance
+                                    const dA = a.distance === undefined ? 999999 : a.distance;
+                                    const dB = b.distance === undefined ? 999999 : b.distance;
+                                    return dA - dB;
+                                });
 
                             setUsers(sortedUsers);
-                            // Cache only the first 40 users to avoid QuotaExceededError
                             try {
                                 localStorage.setItem(CACHE_KEY, JSON.stringify(sortedUsers.slice(0, 40)));
-                            } catch (e) {
-                                console.warn("[DiscoveryFeed] Failed to cache users:", e);
-                            }
+                            } catch (e) { }
                         } else {
-                            setUsers(normalizedAll);
+                            const sortedByOnline = normalizedAll.map(u => ({
+                                ...u,
+                                isOnline: u.lastActive ? (new Date().getTime() - new Date(u.lastActive).getTime() < 1000 * 60 * 5) : false
+                            })).sort((a, b) => (b.isOnline ? 1 : 0) - (a.isOnline ? 1 : 0));
+                            setUsers(sortedByOnline);
                         }
                     } catch (err) {
-                        console.error("Expansion failed", err);
+                        console.warn("Expansion failed", err);
                     }
                 };
 
-                setTimeout(expandData, 500);
+                const expandTimeout = setTimeout(expandData, 500);
+                return () => clearTimeout(expandTimeout);
 
             } catch (error) {
-                console.error("Failed load", error);
+                console.warn("Failed load", error);
                 setLoading(false);
                 clearTimeout(timeout);
             }
         }
 
         loadData();
-        return () => clearTimeout(timeout);
+        return () => {
+            clearTimeout(timeout);
+        };
     }, [user, filter, unit]);
 
     // Extract unique cities for filtering (Normalized to Title Case for chips, but logic remains case-insensitive)
@@ -157,6 +183,7 @@ export function DiscoveryFeed() {
         const q = searchQuery.toLowerCase();
 
         const nameMatch = (u.displayName || "").toLowerCase().includes(q);
+        const originalNameMatch = ((u as any).originalDisplayName || "").toLowerCase().includes(q);
         const usernameMatch = (u.name || "").toLowerCase().includes(q);
         const collegeMatch = (u.college || "").toLowerCase().includes(q);
         const courseMatch = (u.course || "").toLowerCase().includes(q);
@@ -164,7 +191,7 @@ export function DiscoveryFeed() {
         const bioMatch = (u.bio || "").toLowerCase().includes(q);
         const skillsMatch = (u.interests || []).some(interest => interest.toLowerCase().includes(q));
 
-        return nameMatch || usernameMatch || collegeMatch || courseMatch || cityMatch || bioMatch || skillsMatch;
+        return nameMatch || originalNameMatch || usernameMatch || collegeMatch || courseMatch || cityMatch || bioMatch || skillsMatch;
     });
 
     if (loading) {
@@ -252,8 +279,8 @@ export function DiscoveryFeed() {
             </FadeIn>
 
             {/* Explore Section */}
-            <div className="sticky top-[60px] z-30 grid grid-cols-2 md:grid-cols-4 gap-4 mb-6 py-4 bg-background/95 backdrop-blur-sm border-b border-border/50 transition-all duration-300">
-                <Link href="/qa" className="group">
+            <div className="sticky top-[60px] z-30 flex overflow-x-auto lg:grid lg:grid-cols-4 gap-4 mb-6 py-4 bg-background/95 backdrop-blur-sm border-b border-border/50 transition-all duration-300 scrollbar-hide">
+                <Link href="/qa" className="group shrink-0 w-[240px] sm:w-[280px] lg:w-auto">
                     <div className="h-full p-4 rounded-2xl bg-orange-500/5 border border-orange-500/10 hover:border-orange-500/30 transition-all">
                         <div className="w-10 h-10 rounded-full bg-orange-500/10 flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
                             <MessageSquare className="w-5 h-5 text-orange-600" />
@@ -266,7 +293,7 @@ export function DiscoveryFeed() {
                     </div>
                 </Link>
 
-                <Link href="/resources" className="group">
+                <Link href="/resources" className="group shrink-0 w-[240px] sm:w-[280px] lg:w-auto">
                     <div className="h-full p-4 rounded-2xl bg-blue-500/5 border border-blue-500/10 hover:border-blue-500/30 transition-all">
                         <div className="w-10 h-10 rounded-full bg-blue-500/10 flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
                             <BookOpen className="w-5 h-5 text-blue-600" />
@@ -279,7 +306,7 @@ export function DiscoveryFeed() {
                     </div>
                 </Link>
 
-                <Link href="/projects" className="group">
+                <Link href="/projects" className="group shrink-0 w-[240px] sm:w-[280px] lg:w-auto">
                     <div className="h-full p-4 rounded-2xl bg-purple-500/5 border border-purple-500/10 hover:border-purple-500/30 transition-all">
                         <div className="w-10 h-10 rounded-full bg-purple-500/10 flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
                             <Briefcase className="w-5 h-5 text-purple-600" />
@@ -292,7 +319,7 @@ export function DiscoveryFeed() {
                     </div>
                 </Link>
 
-                <Link href="/support" className="group">
+                <Link href="/support" className="group shrink-0 w-[240px] sm:w-[280px] lg:w-auto">
                     <div className="h-full p-4 rounded-2xl bg-green-500/5 border border-green-500/10 hover:border-green-500/30 transition-all">
                         <div className="w-10 h-10 rounded-full bg-green-500/10 flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
                             <HelpCircle className="w-5 h-5 text-green-600" />

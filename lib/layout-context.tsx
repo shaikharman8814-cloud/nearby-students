@@ -44,7 +44,7 @@ export function LayoutProvider({ children }: { children: React.ReactNode }) {
                         }
                     }
                 } catch (e) {
-                    console.error("Error loading layout from Firestore:", e);
+                    console.warn("Error loading layout from Firestore:", e);
                 }
             }
             setIsInitialized(true);
@@ -67,7 +67,7 @@ export function LayoutProvider({ children }: { children: React.ReactNode }) {
                     preferredLayout: newLayout
                 });
             } catch (e) {
-                console.error("Error saving layout to Firestore:", e);
+                console.warn("Error saving layout to Firestore:", e);
             }
         }
     };

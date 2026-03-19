@@ -39,7 +39,7 @@ export const requestNotificationPermission = async (uid: string) => {
                     swRegistration = await navigator.serviceWorker.register("/firebase-messaging-sw.js");
                 }
             } catch (swError: any) {
-                console.error("Service Worker Registration Failed:", swError);
+                console.warn("Service Worker Registration Failed:", swError);
                 // Alert the user to the specific error
                 alert(`Error: ${swError.message}\n\nTry opening the app in Incognito or checking the console.`);
                 return null;
@@ -58,7 +58,7 @@ export const requestNotificationPermission = async (uid: string) => {
             return null;
         }
     } catch (e) {
-        console.error("Error requesting notification permission", e);
+        console.warn("Error requesting notification permission", e);
         return null;
     }
 };
@@ -72,7 +72,7 @@ export const saveFcmToken = async (uid: string, token: string) => {
     }).catch(async (e) => {
         // If doc doesn't exist (edge case), create it? No, user always exists.
         // Maybe field doesn't exist? UpdateDoc creates fields.
-        console.error("Error saving FCM token", e);
+        console.warn("Error saving FCM token", e);
     });
 };
 

@@ -115,7 +115,7 @@ export const createGame = async (hostUid: string, maxPlayers: number = 10) => {
 
         return roomCode;
     } catch (e) {
-        console.error("[GameService] createGame error:", e);
+        console.warn("[GameService] createGame error:", e);
         throw e;
     }
 };
@@ -159,7 +159,7 @@ export const joinGame = async (gameId: string, userUid: string) => {
         await setDoc(doc(playersRef, userUid), newPlayer as any);
         return gameIdUpper;
     } catch (e) {
-        console.error("[GameService] joinGame error:", e);
+        console.warn("[GameService] joinGame error:", e);
         throw e;
     }
 };
@@ -169,7 +169,7 @@ export const toggleReady = async (gameId: string, playerId: string, isReady: boo
         const playerRef = doc(db, 'games', gameId, 'players', playerId);
         await updateDoc(playerRef, { isReady });
     } catch (e) {
-        console.error("[GameService] toggleReady error:", e);
+        console.warn("[GameService] toggleReady error:", e);
     }
 };
 
@@ -181,7 +181,7 @@ export const leaveGame = async (gameId: string, playerId: string) => {
         const playerRef = doc(db, 'games', gameId, 'players', playerId);
         await deleteDoc(playerRef);
     } catch (e) {
-        console.error("[GameService] leaveGame error:", e);
+        console.warn("[GameService] leaveGame error:", e);
     }
 };
 
@@ -196,7 +196,7 @@ export const subscribeToGame = (gameId: string, callback: (game: GameState | nul
             callback(null);
         }
     }, (err) => {
-        console.error("[GameService] subscribeToGame error:", err);
+        console.warn("[GameService] subscribeToGame error:", err);
     });
 };
 
@@ -212,7 +212,7 @@ export const subscribeToPlayers = (gameId: string, callback: (players: Player[])
         });
         callback(players);
     }, (err) => {
-        console.error("[GameService] subscribeToPlayers error:", err);
+        console.warn("[GameService] subscribeToPlayers error:", err);
     });
 };
 
@@ -228,7 +228,7 @@ export const startGame = async (gameId: string) => {
         });
         // Triggers client-side role assignment logic
     } catch (e) {
-        console.error("[GameService] startGame error:", e);
+        console.warn("[GameService] startGame error:", e);
     }
 };
 
@@ -255,7 +255,7 @@ export const setPlayerRoles = async (gameId: string, roleMap: Record<string, Rol
 
         await batch.commit();
     } catch (e) {
-        console.error("[GameService] setPlayerRoles error:", e);
+        console.warn("[GameService] setPlayerRoles error:", e);
     }
 };
 
@@ -265,7 +265,7 @@ export const getMyRole = async (gameId: string, userId: string): Promise<Role | 
         const snap = await getDoc(secretRef);
         if (snap.exists()) return snap.data().role as Role;
     } catch (e) {
-        console.error("[GameService] getMyRole error:", e);
+        console.warn("[GameService] getMyRole error:", e);
     }
     return null;
 };
@@ -288,7 +288,7 @@ export const castVote = async (gameId: string, voterId: string, targetId: string
 
         await batch.commit();
     } catch (e) {
-        console.error("[GameService] castVote error:", e);
+        console.warn("[GameService] castVote error:", e);
     }
 };
 
@@ -303,7 +303,7 @@ export const performNightAction = async (gameId: string, actorId: string, target
             createdAt: new Date().toISOString()
         });
     } catch (e) {
-        console.error("[GameService] performNightAction error:", e);
+        console.warn("[GameService] performNightAction error:", e);
     }
 };
 
@@ -419,7 +419,7 @@ export const processDayResults = async (gameId: string, players: Player[]) => {
 
         await batch.commit();
     } catch (e) {
-        console.error("[GameService] processDayResults error:", e);
+        console.warn("[GameService] processDayResults error:", e);
     }
 };
 
@@ -507,6 +507,6 @@ export const processNightResults = async (gameId: string) => {
 
         await batch.commit();
     } catch (e) {
-        console.error("[GameService] processNightResults error:", e);
+        console.warn("[GameService] processNightResults error:", e);
     }
 };

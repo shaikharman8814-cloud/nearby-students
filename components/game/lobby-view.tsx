@@ -46,7 +46,7 @@ export default function LobbyView({ game, players, currentUser }: LobbyViewProps
         try {
             await startGame(game.id);
         } catch (error) {
-            console.error(error);
+            console.warn(error);
             toast.error("Failed to start game");
             setIsStarting(false);
         }

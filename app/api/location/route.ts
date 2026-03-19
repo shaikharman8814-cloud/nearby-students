@@ -25,7 +25,7 @@ export async function GET(request: Request) {
 
         throw new Error('Photon failed');
     } catch (error) {
-        console.error("Location proxy error:", error);
+        console.warn("Location proxy error:", error);
         // Fallback to internal error or empty 
         return NextResponse.json({ results: [], error: 'Failed to fetch location' }, { status: 500 });
     }

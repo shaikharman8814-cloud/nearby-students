@@ -24,7 +24,7 @@ export function LocationManager() {
                         lat: position.coords.latitude,
                         lng: position.coords.longitude
                     }
-                }).catch(err => console.error("Failed to update auto-location", err));
+                }).catch(err => console.warn("Failed to update auto-location", err));
             },
             (error) => {
                 // Check for Insecure Origin (common in dev on IP)

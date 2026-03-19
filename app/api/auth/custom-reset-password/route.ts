@@ -16,15 +16,8 @@ export async function POST(req: NextRequest) {
 
         const cleanEmail = email.trim();
 
-        // 1. Generate password reset link using Admin SDK
-        // This avoids the client-side Firebase Auth email and gives us the link directly
         const origin = req.headers.get('origin') || 'https://social-net.online';
-        const actionCodeSettings = {
-            url: `${origin}/login`,
-            handleCodeInApp: true,
-        };
-
-        const firebaseResetLink = await adminAuth.generatePasswordResetLink(cleanEmail, actionCodeSettings);
+        const firebaseResetLink = await adminAuth.generatePasswordResetLink(cleanEmail);
 
         // 1.5. Convert Firebase link to internal app link to keep it "invisible"
         const resetUrl = new URL(firebaseResetLink);
@@ -53,14 +46,14 @@ export async function POST(req: NextRequest) {
         // 3. Send Email via Resend
         await sendEmail({
             to: cleanEmail,
-            subject: 'Reset your password for NearbyStudents',
+            subject: `Reset your password for NearbyStudents (Ref: ${oobCode?.substring(0, 4) || 'Req'})`,
             html: html,
         });
 
         return NextResponse.json({ message: 'Password reset email sent successfully' });
 
     } catch (error: any) {
-        console.error('Custom Password Reset Error:', error);
+        console.warn('Custom Password Reset Error:', error);
 
         // Security: Don't reveal if user exists or not, but handle specific errors for logging
         if (error.code === 'auth/user-not-found') {

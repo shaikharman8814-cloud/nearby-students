@@ -62,6 +62,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
             setUser(user);
             setLoading(false);
+        }, (error: any) => {
+            console.warn("[AuthContext] Firebase Auth Error:", error);
+            setLoading(false);
         });
 
         return () => unsubscribe();

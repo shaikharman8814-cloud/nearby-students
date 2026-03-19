@@ -94,7 +94,7 @@ export function AddStoryModal({ onClose, currentProfile, initialMediaUrl, initia
             const data = await res.json();
             setSearchResults(data.results || []);
         } catch (e) {
-            console.error("Location search failed", e);
+            console.warn("Location search failed", e);
         } finally {
             setSearching(false);
         }
@@ -151,7 +151,7 @@ export function AddStoryModal({ onClose, currentProfile, initialMediaUrl, initia
 
             onClose();
         } catch (error) {
-            console.error("Failed to post story", error);
+            console.warn("Failed to post story", error);
             alert("Failed to post story. Check console.");
         } finally {
             setUploading(false);
