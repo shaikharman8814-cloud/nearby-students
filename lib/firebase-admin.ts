@@ -17,10 +17,23 @@ export function getAdminApp(): App {
     // Priority 1: Environment Variable (Recommended for Production)
     const envServiceAccount = process.env.FIREBASE_SERVICE_ACCOUNT || process.env.FIREBASE_SERVICE_ACCOUNT_KEY;
     if (envServiceAccount) {
+        let cleanedEnv = envServiceAccount.trim();
         try {
-            serviceAccount = JSON.parse(envServiceAccount);
-        } catch (e) {
-            console.error("[Admin SDK] Failed to parse FIREBASE_SERVICE_ACCOUNT or FIREBASE_SERVICE_ACCOUNT_KEY env variable.", e);
+            serviceAccount = JSON.parse(cleanedEnv);
+        } catch (firstErr) {
+            try {
+                // If the user pasted it with surrounding quotes (e.g. from .env.local), strip them
+                if ((cleanedEnv.startsWith("'") && cleanedEnv.endsWith("'")) || (cleanedEnv.startsWith('"') && cleanedEnv.endsWith('"'))) {
+                    cleanedEnv = cleanedEnv.slice(1, -1);
+                    // Unescape quotes if they were escaped inside the string literal
+                    cleanedEnv = cleanedEnv.replace(/\\"/g, '"');
+                    serviceAccount = JSON.parse(cleanedEnv);
+                } else {
+                    throw firstErr;
+                }
+            } catch (e: any) {
+                console.error("[Admin SDK] Failed to parse FIREBASE_SERVICE_ACCOUNT env variable:", e.message);
+            }
         }
     }
 
