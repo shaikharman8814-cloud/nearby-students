@@ -10,7 +10,7 @@ import { NotificationManager } from "@/components/notification-manager";
 import { LayoutProvider } from "@/lib/layout-context";
 import { OnboardingGate } from "@/components/onboarding-gate";
 import { SecurityHardener } from "@/components/security-hardener";
-import { CapacitorInit } from "@/components/capacitor-init";
+import { CapacitorNative } from "@/components/capacitor-native";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -40,7 +40,7 @@ export default function RootLayout({
         <AuthProvider>
           <OnboardingGate>
             <SecurityHardener />
-            <CapacitorInit />
+            <CapacitorNative />
             <LayoutProvider>
               <NotificationManager>
                 <CallProvider>
