@@ -7,6 +7,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Loader2 } from 'lucide-react';
 import { createUserProfile } from '@/lib/db';
+import { handleLogin } from '@/lib/login-utils';
 
 export default function SignupPage() {
     const [name, setName] = useState('');
@@ -115,9 +116,9 @@ export default function SignupPage() {
                         <div className="rounded-md bg-destructive/15 p-3 text-sm text-destructive flex flex-col gap-2 items-center text-center">
                             <p>{error}</p>
                             {error.includes('already registered') && (
-                                <Link href="/login" className="font-semibold underline hover:bg-destructive/20 px-2 py-1 rounded">
+                                <button onClick={handleLogin} type="button" className="font-semibold underline hover:bg-destructive/20 px-2 py-1 rounded">
                                     Go to Login
-                                </Link>
+                                </button>
                             )}
                         </div>
                     )}
@@ -135,9 +136,9 @@ export default function SignupPage() {
 
                 <p className="mt-2 text-center text-sm text-muted-foreground">
                     Already have an account?{' '}
-                    <Link href="/login" className="font-semibold text-primary hover:text-primary/90">
+                    <button onClick={handleLogin} type="button" className="font-semibold text-primary hover:text-primary/90">
                         Sign in
-                    </Link>
+                    </button>
                 </p>
             </div>
         </div>

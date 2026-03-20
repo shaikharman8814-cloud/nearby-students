@@ -4,6 +4,7 @@ import { useState, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { Loader2, Lock, ArrowRight, CheckCircle } from 'lucide-react';
 import Link from 'next/link';
+import { handleLogin } from '@/lib/login-utils';
 
 function ResetPasswordForm() {
     const searchParams = useSearchParams();
@@ -53,7 +54,7 @@ function ResetPasswordForm() {
             }
 
             setSuccess(true);
-            setTimeout(() => router.push('/login'), 3000); // Redirect after 3s
+            setTimeout(() => handleLogin(), 3000); // Redirect after 3s
         } catch (err: any) {
             setError(err.message);
         } finally {
@@ -65,7 +66,7 @@ function ResetPasswordForm() {
         return (
             <div className="text-center">
                 <p className="text-red-500 mb-4">Invalid reset link.</p>
-                <Link href="/login" className="text-primary hover:underline">Return to Login</Link>
+                <button onClick={handleLogin} className="text-primary hover:underline">Return to Login</button>
             </div>
         );
     }
@@ -79,9 +80,9 @@ function ResetPasswordForm() {
                 <h2 className="text-2xl font-bold">Password Reset!</h2>
                 <p className="text-muted-foreground">Your password has been successfully updated.</p>
                 <p className="text-sm">Redirecting to login...</p>
-                <Link href="/login" className="inline-block mt-4 text-primary hover:underline">
+                <button onClick={handleLogin} className="inline-block mt-4 text-primary hover:underline">
                     Go to Login Now
-                </Link>
+                </button>
             </div>
         );
     }

@@ -1,5 +1,8 @@
+'use client';
+
 import Link from 'next/link';
 import { ArrowLeft, Shield, Users, MapPin, Lock, GraduationCap, Rocket, Video } from 'lucide-react';
+import { handleLogin } from '@/lib/login-utils';
 
 export default function AboutPage() {
     return (
@@ -96,12 +99,12 @@ export default function AboutPage() {
                     <p className="text-muted-foreground max-w-md mx-auto">
                         Get started today and be part of the fastest growing student community in your city.
                     </p>
-                    <Link
-                        href="/login"
+                    <button
+                        onClick={handleLogin}
                         className="inline-flex items-center justify-center px-8 py-3 rounded-full bg-primary text-primary-foreground font-medium hover:opacity-90 transition-opacity"
                     >
                         Get Started
-                    </Link>
+                    </button>
                 </section>
             </main>
         </div>

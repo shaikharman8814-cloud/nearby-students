@@ -2,6 +2,7 @@
 
 import { Check, MapPin, Rocket, Search, MessageSquare, Bell } from 'lucide-react';
 import Link from 'next/link';
+import { handleLogin } from '@/lib/login-utils';
 import { useAuth } from '@/lib/auth-context';
 import { DiscoveryFeed } from '@/components/discovery-feed';
 import { FeedSkeleton } from '@/components/ui/skeletons';
@@ -55,12 +56,12 @@ export default function Home() {
 
                             {/* Buttons */}
                             <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mt-8 w-full max-w-md mx-auto">
-                                <Link
-                                    href="/login"
+                                <button
+                                    onClick={handleLogin}
                                     className="group bg-[#EFEFEF] hover:bg-white w-full sm:w-auto justify-center transition-colors text-black px-6 py-3.5 rounded-full font-medium flex items-center gap-2 text-sm"
                                 >
                                     Get Started <span className="text-lg leading-none transition-transform group-hover:translate-x-1">→</span>
-                                </Link>
+                                </button>
 
                                 <Link
                                     href="/about"

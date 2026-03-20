@@ -4,6 +4,7 @@ import { useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/auth-context';
+import { handleLogin } from '@/lib/login-utils';
 import { DiscoveryFeed } from '@/components/discovery-feed';
 import { Loader2 } from 'lucide-react';
 
@@ -13,9 +14,9 @@ export default function Home() {
 
     useEffect(() => {
         if (!loading && !user) {
-            router.push('/login');
+            handleLogin();
         }
-    }, [user, loading, router]);
+    }, [user, loading]);
 
     if (loading) {
         return <div className="h-screen flex items-center justify-center"><Loader2 className="animate-spin" /></div>;

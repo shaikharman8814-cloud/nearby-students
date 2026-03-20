@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '@/lib/auth-context';
 import { getUserProfile, updateUserProfile, UserProfile } from '@/lib/db';
 import { uploadProfileImage } from '@/lib/storage';
+import { handleLogin } from '@/lib/login-utils';
 import { useRouter } from 'next/navigation';
 import { Loader2, Upload, ArrowRight } from 'lucide-react';
 
@@ -20,7 +21,7 @@ export default function OnboardingPage() {
         if (authLoading) return;
 
         if (!user) {
-            router.push('/login');
+            handleLogin();
             return;
         }
 

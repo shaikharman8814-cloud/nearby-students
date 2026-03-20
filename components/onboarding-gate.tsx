@@ -7,6 +7,7 @@ import { Loader2 } from 'lucide-react';
 import { doc, getDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { getUserProfile } from '@/lib/db';
+import { handleLogin } from '@/lib/login-utils';
 
 const PUBLIC_PATHS = ['/login', '/about', '/signup', '/register', '/onboarding', '/reset-password'];
 
@@ -69,7 +70,7 @@ export function OnboardingGate({ children }: { children: React.ReactNode }) {
 
     // Handler: User clicks "Get Started"
     const handleGetStarted = () => {
-        router.push('/login');
+        handleLogin();
     };
 
     // 1. Public Path? Pass through.
@@ -81,7 +82,7 @@ export function OnboardingGate({ children }: { children: React.ReactNode }) {
     // 2. Not logged in?
     if (!loading && !user) {
         if (typeof window !== 'undefined') {
-            router.push('/login');
+            handleLogin();
         }
         return null;
     }

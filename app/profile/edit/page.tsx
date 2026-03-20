@@ -5,6 +5,7 @@ import { useAuth } from '@/lib/auth-context';
 import { getUserProfile, updateUserProfile, UserProfile } from '@/lib/db';
 import { uploadProfileImage } from '@/lib/storage';
 import { useRouter } from 'next/navigation';
+import { handleLogin } from '@/lib/login-utils';
 import Link from 'next/link';
 import { Loader2, Upload, Save } from 'lucide-react';
 import Image from 'next/image';
@@ -22,7 +23,7 @@ export default function EditProfilePage() {
         if (authLoading) return; // Wait for auth check
 
         if (!user) {
-            router.push('/login');
+            handleLogin();
             return;
         }
 

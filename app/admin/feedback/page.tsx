@@ -5,6 +5,7 @@ import { useAuth } from '@/lib/auth-context';
 import { Loader2, MessageSquare, Reply, CheckCircle2, AlertTriangle, User } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
+import { handleLogin } from '@/lib/login-utils';
 import { db } from '@/lib/firebase';
 import { collection, query, orderBy, onSnapshot, doc, getDoc } from 'firebase/firestore';
 
@@ -21,7 +22,7 @@ export default function AdminFeedbackPage() {
     useEffect(() => {
         if (!authLoading) {
             if (!user) {
-                router.push('/login');
+                handleLogin();
             } else {
                 checkAdminStatus();
             }

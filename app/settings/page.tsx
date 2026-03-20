@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { useAuth } from '@/lib/auth-context';
 import { useRouter } from 'next/navigation';
+import { handleLogin } from '@/lib/login-utils';
 import {
     Bell,
     User,
@@ -22,14 +23,14 @@ export default function SettingsPage() {
 
     useEffect(() => {
         if (!loading && !user) {
-            router.push('/login');
+            handleLogin();
         }
-    }, [user, loading, router]);
+    }, [user, loading]);
 
     const handleLogout = async () => {
         try {
             await logout();
-            router.push('/login');
+            handleLogin();
         } catch (error) {
             console.warn("Logout failed", error);
         }
