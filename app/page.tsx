@@ -10,6 +10,12 @@ import { FeedSkeleton } from '@/components/ui/skeletons';
 export default function Home() {
     const { user, loading } = useAuth();
 
+    // DEBUG FAST: temporary Auth state log as requested by user
+    if (typeof window !== 'undefined') {
+        console.log("loading:", loading);
+        console.log("user:", user);
+    }
+
     return (
         <>
             {loading ? (
