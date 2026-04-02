@@ -38,6 +38,20 @@ export function AuthWrappers({ children }: { children: React.ReactNode }) {
         }
     }, [user]);
 
+    // SAFE GLOBAL FIX: Add authentication marker to body
+    useEffect(() => {
+        if (typeof window !== 'undefined') {
+            if (user) {
+                document.body.classList.add('authenticated');
+            } else {
+                document.body.classList.remove('authenticated');
+            }
+
+            // DEBUG (non-breaking)
+            console.log("Overlay active:", document.querySelector('[class*="fixed"][class*="inset-0"]'));
+        }
+    }, [user]);
+
     // List of paths that should NOT have the sidebar/header shell
     const EXCLUDED_PATHS = ['/login', '/signup', '/register', '/about', '/landing', '/reset-password'];
     const isExcluded = pathname && EXCLUDED_PATHS.some(path => pathname.startsWith(path));

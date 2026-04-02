@@ -253,3 +253,8 @@
 .profile-card {
   overflow: visible !important;
 }
+
+/* Prevent stuck overlays */
+body.authenticated div[class*="fixed"][class*="inset-0"][class*="bg-black"] {
+  display: none !important;
+}
