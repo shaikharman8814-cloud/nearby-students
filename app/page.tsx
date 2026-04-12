@@ -1,7 +1,8 @@
 'use client';
 
-import { Check, MapPin, Rocket, Search, MessageSquare, Bell } from 'lucide-react';
+import { Check, MapPin, Rocket, Search, MessageSquare, Bell, X } from 'lucide-react';
 import Link from 'next/link';
+import { useState, useEffect } from 'react';
 import { handleLogin } from '@/lib/login-utils';
 import { useAuth } from '@/lib/auth-context';
 import { DiscoveryFeed } from '@/components/discovery-feed';
@@ -9,6 +10,31 @@ import { FeedSkeleton } from '@/components/ui/skeletons';
 
 export default function Home() {
     const { user, loading } = useAuth();
+    const [showPopup, setShowPopup] = useState(false);
+    const [liveUsers, setLiveUsers] = useState(1284);
+
+    useEffect(() => {
+        let timeout: ReturnType<typeof setTimeout>;
+        const updateUsers = () => {
+            setLiveUsers(prev => prev + Math.floor(Math.random() * 4) + 1);
+            timeout = setTimeout(updateUsers, Math.random() * 3000 + 2000);
+        };
+        timeout = setTimeout(updateUsers, 3000);
+        return () => clearTimeout(timeout);
+    }, []);
+
+    useEffect(() => {
+        if (!loading && !user) {
+            const timer = setTimeout(() => {
+                setShowPopup(true);
+            }, 5000); // 5 sec
+            return () => clearTimeout(timer);
+        }
+    }, [loading, user]);
+
+    const closePopup = () => {
+        setShowPopup(false);
+    };
 
     // DEBUG FAST: temporary Auth state log as requested by user
     if (typeof window !== 'undefined') {
@@ -75,12 +101,37 @@ export default function Home() {
                                         </Link>
                                     </div>
 
-                                    {/* Online Counter */}
-                                    <div className="mt-8 text-sm text-gray-400 gap-2 flex items-center justify-center">
-                                        <span className="relative flex h-2 w-2">
-                                            <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
-                                        </span>
-                                        43 students online right now
+                                    {/* Live Connector Counter */}
+                                    <div className="mt-12 flex flex-col items-center select-none">
+                                        <div className="text-gray-200 font-medium text-[15px] sm:text-[16px] text-center flex flex-wrap items-center justify-center gap-1.5 px-4">
+                                            🚀 <span className="text-white font-bold text-[17px] sm:text-[18px] tabular-nums tracking-tight">{liveUsers.toLocaleString()}</span> students are connecting right now — don't miss out
+                                        </div>
+                                        <div className="text-gray-500 text-[11px] uppercase tracking-widest mt-2 flex items-center gap-2">
+                                            <span className="relative flex h-1.5 w-1.5">
+                                                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-500 opacity-75"></span>
+                                                <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-green-500"></span>
+                                            </span>
+                                            Updating live...
+                                        </div>
+                                    </div>
+
+                                    {/* Activity Signals */}
+                                    <div className="mt-10 flex flex-wrap items-center justify-center gap-3 w-full max-w-2xl mx-auto">
+                                        <div className="flex items-center gap-2 bg-white/[0.03] hover:bg-white/[0.06] cursor-default transition-colors px-4 py-2 rounded-full border border-white/[0.08] backdrop-blur-md shadow-lg">
+                                            <span className="relative flex h-2 w-2 mr-1">
+                                                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-orange-500 opacity-75"></span>
+                                                <span className="relative inline-flex rounded-full h-2 w-2 bg-orange-500"></span>
+                                            </span>
+                                            <span className="text-[13.5px] text-gray-300 font-medium"><span className="text-white font-semibold">23</span> students online near you</span>
+                                        </div>
+
+                                        <div className="flex items-center gap-2 bg-white/[0.03] hover:bg-white/[0.06] cursor-default transition-colors px-4 py-2 rounded-full border border-white/[0.08] backdrop-blur-md shadow-lg">
+                                            <span className="text-[13.5px] text-gray-300 font-medium">👀 <span className="text-white font-semibold">5</span> new users joined in last hour</span>
+                                        </div>
+
+                                        <div className="flex items-center gap-2 bg-white/[0.03] hover:bg-white/[0.06] cursor-default transition-colors px-4 py-2 rounded-full border border-white/[0.08] backdrop-blur-md shadow-lg">
+                                            <span className="text-[13.5px] text-gray-300 font-medium">📍 Showing students within <span className="text-white font-semibold">5 km</span></span>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -189,6 +240,32 @@ export default function Home() {
                             </div>
                         </div>
                     </div>
+
+                    {/* Popup */}
+                    {showPopup && (
+                        <>
+                            <style>{`
+                                @keyframes slideUpFade {
+                                    0% { transform: translate(-50%, 20px); opacity: 0; }
+                                    100% { transform: translate(-50%, 0); opacity: 1; }
+                                }
+                                .fomo-popup {
+                                    animation: slideUpFade 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+                                }
+                            `}</style>
+                            <div className="fomo-popup fixed bottom-8 md:bottom-10 left-1/2 w-[92vw] max-w-sm md:w-auto bg-[#1A1A1A] border border-white/10 px-4 md:px-5 py-3 rounded-2xl md:rounded-full shadow-[0_10px_40px_rgba(0,0,0,0.8)] flex items-center justify-between gap-3 z-[1000]">
+                                <span className="text-[13px] md:text-[14.5px] font-medium text-white leading-tight drop-shadow-md flex-1">
+                                    👀 Students near you are joining right now
+                                </span>
+                                <button
+                                    onClick={closePopup}
+                                    className="text-gray-400 hover:text-white transition-colors w-6 h-6 flex-shrink-0 flex items-center justify-center rounded-full bg-white/5 hover:bg-white/10"
+                                >
+                                    <X className="w-4 h-4" />
+                                </button>
+                            </div>
+                        </>
+                    )}
                 </main>
             )}
         </>
