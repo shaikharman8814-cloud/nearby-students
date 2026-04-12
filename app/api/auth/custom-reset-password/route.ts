@@ -11,17 +11,22 @@ export async function POST(req: NextRequest) {
         const { email } = await req.json();
 
         if (!email) {
+            console.warn('[PasswordReset] No email provided');
             return NextResponse.json({ error: 'Email is required' }, { status: 400 });
         }
 
+        console.log('[PasswordReset] Starting for:', email);
         const cleanEmail = email.trim();
 
-        // Force the email to always use the official domain instead of localhost IPs
+        // Use a simpler origin fallback
         const origin = process.env.NEXT_PUBLIC_SITE_URL
             || (process.env.VERCEL_PROJECT_PRODUCTION_URL ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}` : undefined)
             || (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : undefined)
             || 'https://nearby-students.vercel.app';
+
+        console.log('[PasswordReset] Link origin determined as:', origin);
         const firebaseResetLink = await adminAuth.generatePasswordResetLink(cleanEmail);
+        console.log('[PasswordReset] Firebase link generated');
 
         // 1.5. Convert Firebase link to internal app link to keep it "invisible"
         const resetUrl = new URL(firebaseResetLink);
@@ -48,16 +53,18 @@ export async function POST(req: NextRequest) {
         });
 
         // 3. Send Email via Resend
-        await sendEmail({
+        console.log('[PasswordReset] Sending email via service...');
+        const result = await sendEmail({
             to: cleanEmail,
-            subject: `Reset your NearbyStudents password`,
+            subject: `Reset your password`,
             html: html,
         });
+        console.log('[PasswordReset] Email service result:', result);
 
         return NextResponse.json({ message: 'Password reset email sent successfully' });
 
     } catch (error: any) {
-        console.warn('Custom Password Reset Error:', error);
+        console.error('[PasswordReset] ERROR:', error);
 
         // Security: Don't reveal if user exists or not, but handle specific errors for logging
         if (error.code === 'auth/user-not-found') {

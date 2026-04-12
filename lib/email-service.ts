@@ -14,7 +14,7 @@ export interface SendEmailOptions {
 
 export async function sendEmail({ to, subject, html, from }: SendEmailOptions) {
     const senderEmail = process.env.RESEND_FROM_EMAIL || 'onboarding@resend.dev';
-    const fromAddress = from || `NearbyStudents Security <${senderEmail}>`;
+    const fromAddress = from || senderEmail; // Simplest format for maximum reliability
 
     if (!resend) {
         console.warn('--- EMAIL SERVICE (MOCKED) ---');
