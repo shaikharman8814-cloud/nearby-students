@@ -1,6 +1,6 @@
 'use client';
 
-import { Check, MapPin, Rocket, Search, MessageSquare, Bell, X } from 'lucide-react';
+import { Check, MapPin, Rocket, Search, MessageSquare, Bell, X, ChevronDown } from 'lucide-react';
 import Link from 'next/link';
 import { useState, useEffect } from 'react';
 import { handleLogin } from '@/lib/login-utils';
@@ -50,6 +50,40 @@ export default function Home() {
                 <DiscoveryFeed />
             ) : (
                 <main className="relative min-h-[100dvh] bg-[#000000] text-white flex flex-col items-center justify-center px-4 overflow-hidden font-sans">
+                    {/* Floating Header for Landing Page */}
+                    <header className="fixed top-0 left-0 right-0 z-[100] px-6 py-4 flex items-center justify-between backdrop-blur-md bg-black/20 border-b border-white/5">
+                        <div className="flex items-center gap-6">
+                            <Link href="/" className="font-bold text-lg tracking-tight">SocialNet</Link>
+
+                            <div className="relative group">
+                                <button className="flex items-center gap-1.5 text-[13px] font-medium text-gray-400 hover:text-white transition-all py-1 px-3 bg-white/5 rounded-full border border-white/10 hover:border-white/20">
+                                    Click <ChevronDown className="w-3.5 h-3.5 transition-transform group-hover:rotate-180" />
+                                </button>
+                                <div className="absolute top-full left-0 mt-3 w-48 bg-[#0D0D0D] border border-white/10 rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.8)] opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50 p-2 transform origin-top scale-95 group-hover:scale-100 duration-200">
+                                    <Link
+                                        href="https://aetheris.vercel.app"
+                                        target="_blank"
+                                        className="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-white/5 transition-colors text-sm font-medium group/item"
+                                    >
+                                        <div className="w-1.5 h-1.5 rounded-full bg-blue-500 shadow-[0_0_8px_rgba(59,130,246,0.5)]" />
+                                        <span className="flex-1 text-gray-300 group-hover/item:text-white">Aetheris</span>
+                                    </Link>
+                                    <Link
+                                        href="/"
+                                        className="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-white/5 transition-colors text-sm font-medium group/item"
+                                    >
+                                        <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]" />
+                                        <span className="flex-1 text-gray-300 group-hover/item:text-white">SocialNet</span>
+                                    </Link>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="flex items-center gap-4">
+                            <button onClick={handleLogin} className="text-[13px] font-medium text-gray-400 hover:text-white transition-colors">Log in</button>
+                            <button onClick={handleLogin} className="text-[13px] font-medium bg-white text-black px-4 py-1.5 rounded-full hover:bg-white/90 transition-all">Join free</button>
+                        </div>
+                    </header>
                     {/* Bottom Left Logo */}
                     <div className="absolute bottom-8 left-8 w-10 h-10 rounded-full bg-white/[0.03] border border-white/[0.06] flex items-center justify-center text-white font-medium text-sm z-50">
                         N

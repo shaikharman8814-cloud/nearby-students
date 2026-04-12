@@ -192,7 +192,7 @@ export default function OnboardingPage() {
                                             setFormData({ ...formData, photoURL: url });
                                             setFile(null);
                                         }}
-                                        className="w-10 h-10 rounded-full overflow-hidden border border-border hover:scale-110 transition-transform bg-white"
+                                        className="w-10 h-10 rounded-full overflow-hidden border border-border hover:scale-110 transition-transform bg-secondary/50"
                                         title={`Use ${seed} avatar`}
                                     >
                                         <img src={`https://api.dicebear.com/7.x/notionists/svg?seed=${seed}`} alt="Avatar" />

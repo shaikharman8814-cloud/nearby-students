@@ -235,7 +235,7 @@ export const UserCard = memo(({ profile, currentUserId, onConnect, unit = 'km', 
     return (
         <div className="bg-card border border-border rounded-xl p-4 flex flex-col gap-3 shadow-sm hover:shadow-md transition-shadow relative mobile-gpu profile-card">
             {profile.statusText && (
-                <div className="absolute -top-2 -right-2 bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 shadow-sm px-2 py-1 rounded-full text-[10px] font-medium z-10 flex items-center gap-1 animate-in fade-in zoom-in duration-300">
+                <div className="absolute -top-2 -right-2 bg-zinc-900 border border-zinc-800 shadow-sm px-2 py-1 rounded-full text-[10px] font-medium z-10 flex items-center gap-1 animate-in fade-in zoom-in duration-300">
                     {profile.statusEmoji && <span className="text-sm">{profile.statusEmoji}</span>}
                     <span className="max-w-[100px] truncate">{profile.statusText}</span>
                 </div>
