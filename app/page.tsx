@@ -101,6 +101,10 @@ export default function Home() {
                                         </Link>
                                     </div>
 
+                                    <p className="mt-4 text-gray-500 text-xs font-medium tracking-wide flex items-center gap-1.5 opacity-80 select-none">
+                                        ⚡️ Setup takes less than 10 seconds
+                                    </p>
+
                                     {/* Live Connector Counter */}
                                     <div className="mt-12 flex flex-col items-center select-none">
                                         <div className="text-gray-200 font-medium text-[15px] sm:text-[16px] text-center flex flex-wrap items-center justify-center gap-1.5 px-4">
