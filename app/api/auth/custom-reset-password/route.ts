@@ -18,8 +18,8 @@ export async function POST(req: NextRequest) {
 
         // Force the email to always use the official domain instead of localhost IPs
         const origin = process.env.NEXT_PUBLIC_SITE_URL
-            || (process.env.VERCEL_PROJECT_PRODUCTION_URL ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}` : null)
-            || (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : null)
+            || (process.env.VERCEL_PROJECT_PRODUCTION_URL ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}` : undefined)
+            || (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : undefined)
             || 'https://nearby-students.vercel.app';
         const firebaseResetLink = await adminAuth.generatePasswordResetLink(cleanEmail);
 
@@ -50,7 +50,7 @@ export async function POST(req: NextRequest) {
         // 3. Send Email via Resend
         await sendEmail({
             to: cleanEmail,
-            subject: `Reset your password for NearbyStudents (Ref: ${oobCode?.substring(0, 4) || 'Req'})`,
+            subject: `Reset your NearbyStudents password`,
             html: html,
         });
 
