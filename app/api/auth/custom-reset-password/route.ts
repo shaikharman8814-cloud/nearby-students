@@ -18,11 +18,11 @@ export async function POST(req: NextRequest) {
         console.log('[PasswordReset] Starting for:', email);
         const cleanEmail = email.trim();
 
-        // Use a simpler origin fallback
+        // Use the 'Rose' domain as the preferred fallback
         const origin = process.env.NEXT_PUBLIC_SITE_URL
             || (process.env.VERCEL_PROJECT_PRODUCTION_URL ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}` : undefined)
             || (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : undefined)
-            || 'https://nearby-students.vercel.app';
+            || 'https://nearby-students-rose.vercel.app';
 
         console.log('[PasswordReset] Link origin determined as:', origin);
         const firebaseResetLink = await adminAuth.generatePasswordResetLink(cleanEmail);
