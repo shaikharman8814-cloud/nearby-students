@@ -16,7 +16,11 @@ export async function POST(req: NextRequest) {
 
         const cleanEmail = email.trim();
 
-        const origin = req.headers.get('origin') || 'https://social-net.online';
+        // Force the email to always use the official domain instead of localhost IPs
+        const origin = process.env.NEXT_PUBLIC_SITE_URL
+            || (process.env.VERCEL_PROJECT_PRODUCTION_URL ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}` : null)
+            || (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : null)
+            || 'https://nearby-students.vercel.app';
         const firebaseResetLink = await adminAuth.generatePasswordResetLink(cleanEmail);
 
         // 1.5. Convert Firebase link to internal app link to keep it "invisible"
