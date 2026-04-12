@@ -53,40 +53,57 @@ export function SiteHeader({ onMenuClick, isSidebarOpen }: SiteHeaderProps) {
         return () => { mounted = false; };
     }, [user]);
 
+    const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+
     if (!user || !isVisible) return null;
 
     return (
         <header className="sticky top-0 z-50 w-full border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 gpu-accelerated">
             <div className="container flex h-14 max-w-7xl items-center justify-between mx-auto px-4">
-                <div className="flex items-center gap-4">
-                    <Link href="/" className="font-bold text-xl flex items-center gap-2">
-                        <span>Nearby Students</span>
+                <div className="flex items-center gap-3 sm:gap-4 flex-1">
+                    <Link href="/" className="font-bold text-xl flex items-center gap-2 shrink-0">
+                        <span className="hidden xs:inline">SocialNet</span>
+                        <span className="xs:hidden">S</span>
                     </Link>
 
                     {/* Navigation Dropdown */}
-                    <div className="relative group">
-                        <button className="flex items-center gap-1 text-sm font-semibold text-muted-foreground hover:text-foreground transition-all px-2 py-1 rounded-md hover:bg-secondary/50">
-                            Click <ChevronDown className="w-4 h-4 transition-transform group-hover:rotate-180" />
+                    <div className="relative">
+                        <button
+                            onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+                            className={`flex items-center gap-1 text-sm font-semibold transition-all px-2 py-1 rounded-md ${isDropdownOpen ? 'bg-secondary text-foreground' : 'text-muted-foreground hover:text-foreground hover:bg-secondary/50'}`}
+                        >
+                            Click <ChevronDown className={`w-4 h-4 transition-transform duration-200 ${isDropdownOpen ? 'rotate-180' : ''}`} />
                         </button>
-                        <div className="absolute top-full left-0 mt-2 w-48 bg-card border border-border rounded-xl shadow-[0_10px_40px_rgba(0,0,0,0.5)] opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50 p-2 transform origin-top scale-95 group-hover:scale-100 duration-200 backdrop-blur-xl bg-card/95">
-                            <Link
-                                href="https://aetheris.vercel.app"
-                                target="_blank"
-                                className="flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-secondary transition-colors text-sm font-medium group/item"
-                            >
-                                <div className="w-1.5 h-1.5 rounded-full bg-blue-500 shadow-[0_0_8px_rgba(59,130,246,0.5)]" />
-                                <span className="flex-1 text-foreground">Aetheris</span>
-                                <span className="text-[10px] text-muted-foreground opacity-0 group-hover/item:opacity-100 transition-opacity">Launch</span>
-                            </Link>
-                            <Link
-                                href="/"
-                                className="flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-secondary transition-colors text-sm font-medium group/item"
-                            >
-                                <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]" />
-                                <span className="flex-1 text-foreground">SocialNet</span>
-                                <span className="text-[10px] text-muted-foreground opacity-0 group-hover/item:opacity-100 transition-opacity">Current</span>
-                            </Link>
-                        </div>
+
+                        {isDropdownOpen && (
+                            <>
+                                <div
+                                    className="fixed inset-0 z-40"
+                                    onClick={() => setIsDropdownOpen(false)}
+                                />
+                                <div className="absolute top-full left-0 mt-2 w-48 bg-card border border-border rounded-xl shadow-[0_10px_40px_rgba(0,0,0,0.5)] z-50 p-2 animate-in fade-in zoom-in-95 duration-200 backdrop-blur-xl bg-card/95">
+                                    <Link
+                                        href="https://aetheris.vercel.app"
+                                        target="_blank"
+                                        onClick={() => setIsDropdownOpen(false)}
+                                        className="flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-secondary transition-colors text-sm font-medium group/item"
+                                    >
+                                        <div className="w-1.5 h-1.5 rounded-full bg-blue-500 shadow-[0_0_8px_rgba(59,130,246,0.5)]" />
+                                        <span className="flex-1 text-foreground">Aetheris</span>
+                                        <span className="text-[10px] text-muted-foreground opacity-0 group-hover/item:opacity-100 transition-opacity">Launch</span>
+                                    </Link>
+                                    <Link
+                                        href="/"
+                                        onClick={() => setIsDropdownOpen(false)}
+                                        className="flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-secondary transition-colors text-sm font-medium group/item"
+                                    >
+                                        <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]" />
+                                        <span className="flex-1 text-foreground">SocialNet</span>
+                                        <span className="text-[10px] text-muted-foreground opacity-0 group-hover/item:opacity-100 transition-opacity">Current</span>
+                                    </Link>
+                                </div>
+                            </>
+                        )}
                     </div>
                 </div>
                 <div className="flex-1 overflow-x-auto scrollbar-hide ml-2 md:ml-4 flex items-center justify-end">
