@@ -83,7 +83,7 @@ export function SiteHeader({ onMenuClick, isSidebarOpen }: SiteHeaderProps) {
                                 />
                                 <div className="absolute top-full left-0 mt-2 w-48 bg-card border border-border rounded-xl shadow-[0_10px_40px_rgba(0,0,0,0.5)] z-50 p-2 animate-in fade-in zoom-in-95 duration-200 backdrop-blur-xl bg-card/95">
                                     <Link
-                                        href="https://aetheris.vercel.app"
+                                        href="https://aetheris-ai-iota.vercel.app"
                                         target="_blank"
                                         onClick={() => setIsDropdownOpen(false)}
                                         className="flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-secondary transition-colors text-sm font-medium group/item"

@@ -72,7 +72,7 @@ export default function Home() {
                                         />
                                         <div className="absolute top-full left-0 mt-3 w-48 bg-[#0D0D0D] border border-white/10 rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.8)] z-50 p-2 animate-in fade-in zoom-in-95 duration-200">
                                             <Link
-                                                href="https://aetheris.vercel.app"
+                                                href="https://aetheris-ai-iota.vercel.app"
                                                 target="_blank"
                                                 onClick={() => setIsDropdownOpen(false)}
                                                 className="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-white/5 transition-colors text-sm font-medium group/item"
