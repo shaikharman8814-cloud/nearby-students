@@ -50,7 +50,7 @@ export default function Home() {
             ) : user ? (
                 <DiscoveryFeed />
             ) : (
-                <main className="relative min-h-[100dvh] bg-[#000000] text-white flex flex-col items-center justify-center px-4 overflow-hidden font-sans">
+                <main className="relative min-h-[100dvh] bg-[#000000] text-white flex flex-col items-center px-4 overflow-x-hidden font-sans">
                     {/* Floating Header for Landing Page */}
                     <header className="fixed top-0 left-0 right-0 z-[100] px-6 py-4 flex items-center justify-between backdrop-blur-md bg-black/20 border-b border-white/5">
                         <div className="flex items-center gap-6">
@@ -107,7 +107,7 @@ export default function Home() {
                     {/* Background Subtle Glow / Noise */}
                     <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-white/[0.02] rounded-full blur-[120px] pointer-events-none z-0" />
 
-                    <div className="relative max-w-6xl mx-auto w-full flex flex-col items-center flex-1 justify-center mt-12 md:mt-16">
+                    <div className="relative max-w-6xl mx-auto w-full flex flex-col items-center flex-1 justify-center pt-24 pb-12 md:pt-16">
 
                         {/* hero-container */}
                         <div className="relative w-full grid grid-cols-1 lg:grid-cols-2 lg:items-center">
