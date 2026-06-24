@@ -1,5 +1,5 @@
-import GameHub from "@/components/games/game-hub";
+import GameHub from "@/components/games/game-hub" ;
 
-export default function GamesPage() {
+export default function GamesPage(){
     return <GameHub />;
 }
