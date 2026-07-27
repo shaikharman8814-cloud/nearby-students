@@ -212,7 +212,7 @@ export default function ProjectsPage() {
                                                 <ProjectCard
                                                     project={project}
                                                     onApply={handleApply}
-                                                    applicationStatus={myApp?.status}
+                                                    applicationStatus={myApp?.status }
                                                     myRoleTitle={myApp?.roleTitle}
                                                 />
                                             </div>
