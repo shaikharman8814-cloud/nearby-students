@@ -67,7 +67,7 @@ export async function POST(req: Request) {
                 console.warn(`[Summarize] Attempt ${i + 1} failed:`, err.message);
                 lastError = err;
                 // Only retry on 429 or 503 (Overloaded)
-                if (!err.message.includes("429") && !err.message.includes("503")) {
+                if (!err.message.includes("429") && !err.message.includes("503")){
                     throw err; // Fatal error, don't retry
                 }
             }
