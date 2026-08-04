@@ -86,7 +86,7 @@ export async function POST(req: Request) {
         console.warn("[Summarize] Error:", error);
 
         let errorMessage = error.message || String(error);
-        if (errorMessage.includes("429") || errorMessage.includes("Quota")) {
+        if (errorMessage.includes("429") || errorMessage.includes("Quota")){
             errorMessage = "AI is busy (Rate Limit Exceeded). Please try again later.";
         } else if (errorMessage.includes("404")) {
             errorMessage = "AI Model not found for this API Key.";
